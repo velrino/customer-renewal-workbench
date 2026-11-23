@@ -8,7 +8,7 @@ This Hacker Eval prototype uses six fictional B2B software accounts. The buyer i
 
 [Editable project plan](docs/PLANS/0-START/plan.excalidraw) · [Estimated monthly costs by user count](docs/COST/README.md)
 
-![Customer Renewal Workbench plan showing the account queue, intervention workflow, and deployment estimates](docs/PLANS/0-START/plan.png)
+![Customer Renewal Workbench plan showing the account queue, intervention workflow, and deployment estimates](docs/PLANS/0-START/plan.svg)
 
 ## Starting portfolio
 
