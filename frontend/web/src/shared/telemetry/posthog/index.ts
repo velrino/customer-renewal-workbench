@@ -1,21 +1,22 @@
 let initialization: Promise<void> | undefined
 
-export function initializeTelemetry() {
+export function initializePostHog() {
   if (typeof window === 'undefined' || process.env.NODE_ENV !== 'production' ||
     ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname) ||
     navigator.doNotTrack === '1' || process.env.NEXT_PUBLIC_POSTHOG_ENABLED !== 'true') return
 
+  const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST
   const token = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
-  if (!token?.startsWith('phc_')) return
+  if (!apiHost || !token?.startsWith('phc_')) return
 
-  initialization ??= start(token).catch(() => {
+  initialization ??= start(token, apiHost).catch(() => {
     // The workbench stays usable if analytics is blocked or unavailable.
   })
   return initialization
 }
 
-async function start(token: string) {
-  const host = new URL(process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com')
+async function start(token: string, apiHost: string) {
+  const host = new URL(apiHost)
   if (host.protocol !== 'https:' || host.username || host.password) return
   const { default: posthog } = await import('posthog-js/no-external')
   posthog.init(token, {

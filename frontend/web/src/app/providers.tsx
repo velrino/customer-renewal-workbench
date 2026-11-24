@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { initializeTelemetry } from '@/shared/telemetry'
+import { initializePostHog } from '@/shared/telemetry/posthog'
 import { preferenceKeys } from '@/shared/storage/local-storage/preferences'
 
 import { NextIntlClientProvider } from 'next-intl'
@@ -11,7 +11,7 @@ import { routing } from '@/shared/i18n/routing'
 import messages from '@/shared/i18n/messages/en.json'
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  useEffect(() => { void initializeTelemetry() }, [])
+  useEffect(() => { void initializePostHog() }, [])
 
   return (
     <NextIntlClientProvider
