@@ -1,0 +1,7 @@
+target/
+.env
+.env.*
+*.json
+*.pem
+*.p12
+*.key
