@@ -1,32 +1,27 @@
-# Renewal API
+# Customer Renewal Workbench API
 
-Go service for the Customer Renewal Workbench. The API runs on Cloud Run in Iowa and writes shared account changes to the native Firestore database `(default)` in the same region. [Scalar API reference](https://renewal-api-43zsh4z3ja-uc.a.run.app/docs)
+**TL;DR** — A Go service on Cloud Run lists renewal accounts and handles every change to the shared portfolio. Firestore transactions enforce account revisions and the two-slot limit. The dashboard listens directly to Firestore for committed changes. [Live API](https://renewal-api-809086370856.us-central1.run.app/) · [Scalar API reference](https://renewal-api-809086370856.us-central1.run.app/docs)
 
-## Development
+## Run locally
 
-From the repository root, use pnpm and the Go version specified in `backend/api/go.mod`.
+Use Node.js 22.12+, pnpm 10 and the Go version in [go.mod](go.mod). Run these commands from the repository root.
 
 ```sh
-export GOOGLE_CLOUD_PROJECT=customer-renewal-workbench
-export FIRESTORE_DATABASE='(default)'
+pnpm install --frozen-lockfile
 pnpm dev --filter=renewal-workbench-api
 ```
 
-Run `pnpm dev` from the root to start both services. Next.js refreshes frontend edits in the browser. Turbo starts Air for the backend. Air recompiles and restarts the Go process when its source, module files, OpenAPI contract or Scalar page changes. The first run downloads the pinned Air version through Go. Reload the docs tab to see those changes. The server listens on port 8080 by default. Use `PORT` to change it and `APP_ENV` to label the environment. Local runs use Application Default Credentials. Keep credential files outside the checkout. Cloud Run uses its attached runtime identity.
+Open the [local Scalar reference](http://127.0.0.1:8080/docs). The reference works as soon as the server starts. To change the default port, set `PORT` on the API and `NEXT_PUBLIC_API_ORIGIN` on the frontend. To exercise account reads and writes, connect Firestore using the emulator setup below. Turbo starts Air, which downloads on first use and restarts the API after changes to Go source, module files or API docs. Refresh the Scalar tab to see contract changes.
 
-## Shared workbench
+### Shared workbench
 
-The API commits changes to `workbenches/shared` in one Firestore transaction. The frontend listens to that document. An empty database starts with the six sample accounts and zero saved changes. Reset restores that initial view for all API users. A successful reset starts a 60-second cooldown stored in the same transaction. Commands can still be saved during the cooldown.
-
-The HTTP middleware in `internal/shared/ratelimit` uses in-memory token buckets from `github.com/ninepeach/go-ratelimit`. Register each route group with its own policy. Commands refill at 30 tokens per minute per network peer and 120 per instance. Resets refill at 3 and 12 respectively. Each bucket starts full and can hold one minute’s tokens. A request consumes one token from both buckets together. A denied request returns HTTP 429 with the retry delay in seconds. The health check uses its dependency cache and stays outside these write quotas. Peers behind the same proxy can share quota because the service uses the socket address. Restarting the process restores its burst capacity. The reset cooldown applies across instances running this version. Drain previous revisions when rolling out, since older writers replace the board without preserving the cooldown.
-
-For isolated local development, install Firebase CLI and Java 21, then run this from the repository root in one terminal:
+For an isolated demo, install the Firebase CLI and Java 21. In one terminal, start Firestore on port 8085.
 
 ```sh
 firebase emulators:start --only firestore --config infra/firebase/firebase.json --project demo-renewal
 ```
 
-In a second terminal, run:
+In a second terminal, start both services with the same emulator settings. If the API is already running on port 8080, stop that process first.
 
 ```sh
 GOOGLE_CLOUD_PROJECT=demo-renewal NEXT_PUBLIC_FIRESTORE_PROJECT_ID=demo-renewal \
@@ -34,26 +29,56 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST=127.0
 pnpm dev
 ```
 
-Select **Shared API** under **User menu → Environment**. The local API uses port 8080. Its emulator health check reads the shared document and also accepts an empty database. In Cloud Run, the existing health check reads database metadata.
+Open the [local dashboard](http://127.0.0.1:3000/) and select **User menu → Environment → Shared API**. An empty database shows six sample accounts with no saved changes. For API-only development against a hosted database, set `GOOGLE_CLOUD_PROJECT` and `FIRESTORE_DATABASE` and run the filtered command above with Application Default Credentials. Keep credential files outside the checkout.
 
-### Production setup
+## Folder structure
 
-Deploy the Firestore rules from the repository root using `firebase deploy --only firestore:rules --config infra/firebase/firebase.json --project customer-renewal-workbench`. The rules grant public single-document reads on the synthetic workbench. Browser clients cannot list documents or write to Firestore.
+| Folder | What belongs here |
+| --- | --- |
+| [cmd/api/](cmd/api/) | Server entry point, environment settings and wiring for storage, telemetry and routes. |
+| [internal/app/](internal/app/) | HTTP router setup for health and documentation. |
+| [internal/modules/health-check/](internal/modules/health-check/) | Health responses and the per-instance dependency cache. |
+| [internal/modules/renewals/](internal/modules/renewals/) | Paginated account reads, command validation, shared reset and Firestore transactions. |
+| [internal/shared/firestore/](internal/shared/firestore/) | Firestore dependency probe for the hosted database. |
+| [internal/shared/ratelimit/](internal/shared/ratelimit/) | HTTP middleware for per-peer and per-instance quotas. |
+| [internal/shared/observability/](internal/shared/observability/) | Sentry integration for HTTP panics and background probe failures. |
+| [internal/shared/utils/](internal/shared/utils/) | Process uptime calculation. |
+| [docs/](docs/) | OpenAPI contract and Scalar viewer. |
 
-Grant the Cloud Run runtime identity `datastore.databases.getMetadata`, `datastore.databases.get`, and `datastore.entities.get`, `datastore.entities.create`, `datastore.entities.update` on the intended database. The service uses its attached identity for transactions. Deploy the Go service and build the frontend against the same project. The frontend defaults to the project above and supports build-time overrides through `NEXT_PUBLIC_FIRESTORE_PROJECT_ID` and `NEXT_PUBLIC_API_ORIGIN`. When using a named database, set `FIRESTORE_DATABASE` on the API and `NEXT_PUBLIC_FIRESTORE_DATABASE` at frontend build time to the same ID. Set the matching database in `infra/firebase/firebase.json` and deploy its rules before enabling the frontend. [Firestore IAM permissions](https://firebase.google.com/docs/firestore/security/iam)
+## Shared data and request limits
 
-## Error reporting
+The API writes to `workbenches/shared`. A confirmed reset clears saved changes for everyone and records a 60-second cooldown in the same transaction. Other commands can still be saved during that minute.
 
-Set `SENTRY_DSN` to the Go API project DSN to enable reporting. Events use `APP_ENV` and the Cloud Run revision, or an explicit `SENTRY_RELEASE`. The HTTP middleware reports handler panics across routes. The background Firestore check reports unexpected errors once per refresh. Local runs can omit the DSN.
+| Operation | Requests/min per network peer | Requests/min per instance |
+| --- | ---: | ---: |
+| List accounts | 60 | 240 |
+| Account commands | 30 | 120 |
+| Reset attempts | 3 | 12 |
 
-## Structure
+Each group has independent in-memory token buckets that start full. Each request consumes a token from both buckets. A throttled caller receives HTTP 429 and a `Retry-After` delay in seconds. Peers behind the same proxy can share a bucket. Restarting an instance refills its quotas. The reset cooldown persists across instances.
 
-- `cmd/api` starts the server and reads environment settings.
-- `internal/app` wires HTTP handlers to the server.
-- `internal/modules/health-check` manages the health response and per-instance cache.
-- `internal/modules/renewals` validates shared commands, account revisions and weekly capacity.
-- `internal/shared/firestore` performs the read-only dependency check.
-- `internal/shared/utils` calculates process uptime.
-- `docs` contains the OpenAPI contract and its Scalar viewer.
+The health check has its own cache. On Cloud Run it reads database metadata. With the emulator it reads the shared document and accepts an empty database.
 
-Run `go test -race ./...` to exercise the handler and `go vet ./...` for static checks. GitHub Actions runs both and builds the service for backend changes.
+## Production setup
+
+- **Database and identity.** Cloud Run and the native Firestore database `(default)` run in Iowa. Grant the attached runtime identity `datastore.databases.getMetadata`, `datastore.databases.get`, and `datastore.entities.get`, `datastore.entities.create`, `datastore.entities.update` on the target database. [Firestore IAM permissions](https://firebase.google.com/docs/firestore/security/iam)
+- **Frontend configuration.** Build the frontend with the matching `NEXT_PUBLIC_FIRESTORE_PROJECT_ID` and `NEXT_PUBLIC_API_ORIGIN`. For a named database, match `FIRESTORE_DATABASE` on the API with `NEXT_PUBLIC_FIRESTORE_DATABASE` in the frontend build and the database in [firebase.json](../../infra/firebase/firebase.json).
+- **Access rules.** Deploy the rules before enabling the frontend. They allow public reads of the single synthetic board document and deny browser writes and document listing. From the repository root, run `firebase deploy --only firestore:rules --config infra/firebase/firebase.json --project customer-renewal-workbench`. [Firestore rules](../../infra/firebase/firestore.rules)
+- **Rollout.** Drain revisions that predate the reset cooldown. Those writers can replace the board without preserving its last reset time.
+
+## Telemetry setup
+
+Set `SENTRY_DSN` to enable error reporting. The HTTP middleware reports handler panics. A failed Firestore probe sends one report per refresh for unexpected errors. `APP_ENV` labels the environment and defaults to `local`. Events use the Cloud Run revision unless `SENTRY_RELEASE` overrides it. Local runs can omit the DSN.
+
+## Verification
+
+From the repository root, run the same Go checks used in backend CI.
+
+```sh
+cd backend/api
+go vet ./...
+go test -race ./...
+go build ./...
+```
+
+[Frontend guide](../../frontend/web/README.md) · [Project README](../../README.md)
