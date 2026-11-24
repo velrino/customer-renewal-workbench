@@ -21,17 +21,13 @@ Open the [local dashboard](http://127.0.0.1:3000/). The [frontend guide](fronten
 
 The static Next.js dashboard offers two persistence modes. **Local** stores work in the current browser’s IndexedDB. **Shared API** sends writes to Go on Cloud Run and listens directly to Firestore for updates. The arrows show the ownership of each write and the return path for a saved decision.
 
-[![Runtime architecture with the browser, Go API, Firestore and telemetry](docs/ARCHITECTURE/architecture-icons.png)](docs/ARCHITECTURE/architecture-icons.png)
+[![Runtime architecture with the browser, Go API, Firestore and telemetry](docs/ARCHITECTURE/architecture.svg)](docs/ARCHITECTURE/architecture.svg)
 
-[Editable Excalidraw source](docs/ARCHITECTURE/architecture-icons.excalidraw)
+[Editable Excalidraw source](docs/ARCHITECTURE/architecture.excalidraw)
 
 ### Local and shared writes
 
-A local save validates the account revision and weekly capacity in an IndexedDB transaction. A shared save makes those checks in a Firestore transaction. An open editor keeps its original environment if connectivity changes.
-
-[![Hand-drawn view of the local storage transaction and the shared command and listener paths](docs/ARCHITECTURE/architecture.png)](docs/ARCHITECTURE/architecture.png)
-
-[Editable Excalidraw source](docs/ARCHITECTURE/architecture.excalidraw) · [API guide](backend/api/README.md)
+A local save validates the account revision and weekly capacity in an IndexedDB transaction. A shared save makes those checks in a Firestore transaction. An open editor keeps its original environment if connectivity changes. [API guide](backend/api/README.md)
 
 ## Renewal flows
 
