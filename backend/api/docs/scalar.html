@@ -9,7 +9,10 @@
   <div id="app"></div>
   <script type="module">
     import { createApiReference } from 'https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.83.0/esm.js'
-    createApiReference('#app', { url: '/openapi.json' })
+    createApiReference('#app', {
+      url: '/openapi.json',
+      showDeveloperTools: 'never',
+    })
   </script>
 </body>
 </html>

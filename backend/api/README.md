@@ -4,15 +4,15 @@ Go service for the Customer Renewal Workbench. The API runs on Cloud Run in Iowa
 
 ## Development
 
-From this directory, use the Go version specified in `go.mod`.
+From the repository root, use pnpm and the Go version specified in `backend/api/go.mod`.
 
 ```sh
 export GOOGLE_CLOUD_PROJECT=customer-renewal-workbench
 export FIRESTORE_DATABASE='(default)'
-go run ./cmd/api
+pnpm dev --filter=renewal-workbench-api
 ```
 
-The server listens on port 8080 by default. Use `PORT` to change it and `APP_ENV` to label the environment. Local runs use Application Default Credentials. Keep credential files outside the checkout. Cloud Run uses its attached runtime identity.
+Run `pnpm dev` from the root to start both the API and frontend. The server listens on port 8080 by default. Use `PORT` to change it and `APP_ENV` to label the environment. Local runs use Application Default Credentials. Keep credential files outside the checkout. Cloud Run uses its attached runtime identity.
 
 ## Structure
 

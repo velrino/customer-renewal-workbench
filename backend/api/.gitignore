@@ -6,3 +6,5 @@ target/
 *.p12
 *.key
 !/docs/openapi.json
+!/package.json
+!/turbo.json
