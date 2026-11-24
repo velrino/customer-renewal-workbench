@@ -10,7 +10,7 @@ export function useDashboardLoading(dataReady: boolean) {
   useEffect(() => {
     const timers = sections.map(section => window.setTimeout(() => {
       setElapsed(previous => new Set(previous).add(section))
-    }, 500 + Math.floor(Math.random() * 501)))
+    }, Math.floor(Math.random() * 11)))
     return () => timers.forEach(window.clearTimeout)
   }, [attempt])
 
