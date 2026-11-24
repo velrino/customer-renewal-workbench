@@ -1,0 +1,31 @@
+/* The tour library positions the tooltip. Use the application's own panel and controls. */
+.tour-step > div:has(.tour-panel) {
+  max-width: calc(100vw - 1.75rem);
+}
+.quick-tour div:has(> p > .tour-panel) {
+  padding: 0 !important;
+}
+.quick-tour .tour-panel {
+  display: block;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  text-align: start;
+  padding: 1rem;
+  font-family: 'Inter Variable', sans-serif;
+}
+@media (min-width: 768px) {
+  .tour-step[style*='--tour-left'] > div:has(.tour-panel) {
+    left: var(--tour-left) !important;
+    top: var(--tour-top) !important;
+  }
+  .tour-step[style*='--tour-left']
+    > div:has(.tour-panel)
+    > div:first-child:not(:has(.tour-panel)) {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quick-tour * {
+    transition-duration: 0s !important;
+  }
+}

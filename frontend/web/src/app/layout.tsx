@@ -1,0 +1,19 @@
+import './globals.css'
+import { Providers } from './providers'
+import { routing } from '@/shared/i18n/routing'
+import messages from '@/shared/i18n/messages/en.json'
+
+export const metadata = { title: messages.nav.brand }
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang={routing.defaultLocale} suppressHydrationWarning>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  )
+}
