@@ -4,6 +4,18 @@
 
 [Live dashboard](https://customer-renewal-workbench.vercel.app/) · [Account queue](https://customer-renewal-workbench.vercel.app/#account-queue) · [Frontend guide](frontend/web/README.md) · [Architecture](#architecture) · [Renewal flows](#renewal-flows) · [Monthly costs](#monthly-costs) · [Project plan](docs/PLANS/0-START/plan.excalidraw) · [Plan preview](docs/PLANS/0-START/plan.svg)
 
+## Architecture
+
+The static Next.js dashboard offers two persistence modes. **Local** stores work in the current browser’s IndexedDB. **Shared API** sends writes to Go on Cloud Run and listens directly to Firestore for updates. The arrows show the ownership of each write and the return path for a saved decision.
+
+[![Runtime architecture with the browser, Go API, Firestore and telemetry](docs/ARCHITECTURE/architecture.svg)](docs/ARCHITECTURE/architecture.svg)
+
+[Editable Excalidraw source](docs/ARCHITECTURE/architecture.excalidraw)
+
+### Local and shared writes
+
+A local save validates the account revision and weekly capacity in an IndexedDB transaction. A shared save makes those checks in a Firestore transaction. An open editor keeps its original environment if connectivity changes. [API guide](backend/api/README.md)
+
 ## Run locally
 
 Use Node.js 22.12+ and pnpm 10. Run these commands from the repository root.
@@ -16,18 +28,6 @@ pnpm dev --filter=renewal-workbench-web
 To start both services, install the Go version in [backend/api/go.mod](backend/api/go.mod) and run `pnpm dev`. See the [API guide](backend/api/README.md) to configure the shared Firestore workbench.
 
 Open the [local dashboard](http://127.0.0.1:3000/). The [frontend guide](frontend/web/README.md) covers the folder structure, build, and telemetry setup.
-
-## Architecture
-
-The static Next.js dashboard offers two persistence modes. **Local** stores work in the current browser’s IndexedDB. **Shared API** sends writes to Go on Cloud Run and listens directly to Firestore for updates. The arrows show the ownership of each write and the return path for a saved decision.
-
-[![Runtime architecture with the browser, Go API, Firestore and telemetry](docs/ARCHITECTURE/architecture.svg)](docs/ARCHITECTURE/architecture.svg)
-
-[Editable Excalidraw source](docs/ARCHITECTURE/architecture.excalidraw)
-
-### Local and shared writes
-
-A local save validates the account revision and weekly capacity in an IndexedDB transaction. A shared save makes those checks in a Firestore transaction. An open editor keeps its original environment if connectivity changes. [API guide](backend/api/README.md)
 
 ## Renewal flows
 
