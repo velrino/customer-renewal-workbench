@@ -1,6 +1,6 @@
 'use client'
 
-import { useSyncExternalStore } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { readStorageValue, subscribeToStorage, writeStorageValue } from '..'
 
 function parseRecord(raw: string | null): Record<string, unknown> {
@@ -16,11 +16,16 @@ function parseRecord(raw: string | null): Record<string, unknown> {
   return {}
 }
 
-export function usePreferenceRecord(key: string) {
+export function usePreferenceRecord(key: string, temporary = false) {
+  const [draft, setDraft] = useState<Record<string, unknown>>({})
   const raw = useSyncExternalStore(subscribeToStorage, () => readStorageValue(key), () => null)
   function update(patch: Record<string, unknown>) {
+    if (temporary) {
+      setDraft(previous => ({ ...previous, ...patch }))
+      return
+    }
     const current = parseRecord(readStorageValue(key))
     writeStorageValue(key, JSON.stringify({ ...current, ...patch }))
   }
-  return { prefs: parseRecord(raw), update }
+  return { prefs: temporary ? draft : parseRecord(raw), update }
 }
