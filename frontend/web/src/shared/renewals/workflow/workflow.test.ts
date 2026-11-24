@@ -7,6 +7,7 @@ import {
   committed,
   planningCoverage,
   signalsConflict,
+  suggestedAction,
   type Changes,
 } from './index.ts'
 
@@ -99,4 +100,16 @@ test('planning coverage counts a timely intervention and ignores Atlas', () => {
     coverage.ready.map((account) => account.id),
     ['cove'],
   )
+})
+
+test('an unreachable sponsor triggers review at an actual 30-point drop', () => {
+  for (const [current, expected] of [[0.398, 'steady'], [0.396, 'review'], [0.395, 'review']] as const) {
+    assert.equal(attention({ ...beacon, previousAdoption: 0.696, adoption: current }), expected)
+  }
+})
+
+test('a new intervention uses current evidence after an issue is resolved', () => {
+  const resolved = applyCommand({}, cove, 0, { type: 'resolve' })
+  assert.equal(suggestedAction(cove), 'resolveIssue')
+  assert.equal(suggestedAction(cove, resolved), 'checkIn')
 })
