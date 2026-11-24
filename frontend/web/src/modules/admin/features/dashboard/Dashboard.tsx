@@ -31,6 +31,8 @@ import { QueueSkeleton } from './components/DashboardSkeleton'
 import { RenewalOverview } from './components/RenewalOverview'
 
 import { AccountDecision } from './components/AccountDecision'
+import { useEnvironment } from '@/shared/api/environment'
+import { useSharedRenewalWork } from '@/shared/renewals/hooks/useSharedRenewalWork'
 import { useRenewalWork } from '@/shared/renewals/hooks/useRenewalWork'
 import {
   attention,
@@ -65,10 +67,25 @@ function followUpFor(days: number) {
 }
 
 export function Dashboard() {
+  const { environment } = useEnvironment()
+  return environment === 'api' ? <SharedDashboard /> : <LocalDashboard />
+}
+
+function SharedDashboard() {
+  const work = useSharedRenewalWork()
+  return <DashboardView work={work} shared />
+}
+
+function LocalDashboard() {
+  const work = useRenewalWork()
+  return <DashboardView work={work} shared={false} />
+}
+
+function DashboardView({ work, shared }: { work: ReturnType<typeof useRenewalWork>; shared: boolean }) {
   const referenceDay = today()
   const t = useTranslations('dashboard')
   const nav = useTranslations('nav')
-  const { changes, ready, readError, retryRead, resetWork, save, saveTwo } = useRenewalWork()
+  const { changes, ready, readError, retryRead, resetWork, save, saveTwo } = work
   const loading = useDashboardLoading(ready)
   function retryDashboard() {
     loading.restart()
@@ -356,8 +373,10 @@ export function Dashboard() {
     <>
       <Navbar onReset={async () => {
         await resetWork()
-        clearWorkbenchPreferences()
-        window.location.reload()
+        if (!shared) {
+          clearWorkbenchPreferences()
+          window.location.reload()
+        }
       }} />
       <main className="mx-auto w-full max-w-7xl space-y-4 px-4 py-6">
         <div className="flex flex-wrap items-center justify-between gap-2">

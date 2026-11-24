@@ -13,7 +13,7 @@ pnpm install --frozen-lockfile
 pnpm dev --filter=renewal-workbench-web
 ```
 
-To start both services, install the Go version in [backend/api/go.mod](backend/api/go.mod) and run `pnpm dev`. See the [API guide](backend/api/README.md) to configure the Firestore health check.
+To start both services, install the Go version in [backend/api/go.mod](backend/api/go.mod) and run `pnpm dev`. See the [API guide](backend/api/README.md) to configure the shared Firestore workbench.
 
 Open the [local dashboard](http://127.0.0.1:3000/). The [frontend guide](frontend/web/README.md) covers the folder structure, build, and telemetry setup.
 
@@ -47,11 +47,13 @@ Start in a fresh browser profile and skip or finish the quick tour.
 3. Under Cove’s **Owner actions**, mark the critical issue resolved. Cove moves to **Follow-up planned**, retains the original plan evidence, and still occupies one slot.
 4. Save an **Ember** plan to fill the second slot. Ember stays **Review now**. Try saving **Beacon** and verify the limit. Edit Ember’s owner and check that the count stays at two.
 5. Complete Ember’s intervention. It moves to **Reviewed** with budget approval still pending. Reload to verify that status, then use the free slot for Beacon. Complete Cove’s plan and check that Cove returns to **Routine review** and still shows the completed plan.
-6. Search for an absent account and recover with **Show all accounts**. Toggle the dashboard’s 30-day renewal filter. Press Escape in an account dialog and verify focus returns to the trigger. An independent browser profile starts with zero saved plans.
+6. Search for an absent account and recover with **Show all accounts**. Toggle the dashboard’s 30-day renewal filter. Press Escape in an account dialog and verify focus returns to the trigger. In Local mode, an independent browser profile starts with zero saved plans.
 
 ## Persistence and scope
 
-IndexedDB saves work in the current browser. Each write checks capacity and updates the plan in one transaction across tabs. A revision check rejects stale edits. If storage fails, the draft can be retried. The diagram’s Go API and Firestore describe a possible later phase for shared data across devices. The prototype uses synthetic evidence and simulates owner actions.
+**Local** saves work in IndexedDB for the current browser. **API**, available under **User menu → Environment**, shares the six accounts across browsers. The dashboard listens to Firestore and sends every change to the Go API. Both modes check account revisions and enforce the two-slot limit transactionally.
+
+**Reset workbench** restores the starting portfolio in the selected environment. In API mode it clears everyone’s plans, questions and owner updates after confirmation. The Local portfolio stays separate when switching modes or falling back to Local. The shared demo is public and intended for fictional data.
 
 **Proposed success metric** — Share of accounts renewing within 30 days with a plan saved before renewal that cites a signal, names an owner, and schedules follow-up by renewal. The starting denominator is Beacon, Cove, Drift, and Ember. The dashboard measures planning coverage. Measuring renewal impact would require outcome data and a comparison.
 

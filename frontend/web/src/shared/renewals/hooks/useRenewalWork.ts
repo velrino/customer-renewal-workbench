@@ -12,7 +12,7 @@ import {
 const databaseName = 'renewal-workbench-week-v1'
 const records = createRecordStore<AccountWork>(databaseName, 'accounts')
 
-type AccountCommand = { account: Account; revision: number; command: Command }
+export type AccountCommand = { account: Account; revision: number; command: Command }
 
 function saveCommand({ account, revision, command }: AccountCommand) {
   return records.update(current => applyCommand(current, account, revision, command))

@@ -9,7 +9,7 @@ import (
 	healthcheck "renewal-api/internal/modules/health-check"
 )
 
-func Routes(env string, check func(context.Context) (time.Duration, error)) http.Handler {
+func Routes(env string, check func(context.Context) (time.Duration, error)) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle("GET /{$}", healthcheck.New(env, check))
 	mux.HandleFunc("GET /docs", docs.Reference)

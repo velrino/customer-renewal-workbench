@@ -1,3 +1,4 @@
+import { useEnvironment } from '@/shared/api/environment'
 import { useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { RotateCcw } from 'lucide-react'
@@ -9,6 +10,8 @@ const resetColor = 'bg-[#9e0812] text-white hover:bg-[#87070f]'
 
 export function ResetWorkbenchDialog({ onReset }: { onReset: () => Promise<void> }) {
   const t = useTranslations('nav')
+  const { environment } = useEnvironment()
+  const resetAtOpen = useRef(onReset)
   const cancel = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -17,9 +20,12 @@ export function ResetWorkbenchDialog({ onReset }: { onReset: () => Promise<void>
     if (busy) return
     setBusy(true)
     try {
-      await onReset()
+      await resetAtOpen.current()
+      setOpen(false)
     } catch {
+      setOpen(false)
       toast.error(t('resetError'))
+    } finally {
       setBusy(false)
     }
   }
@@ -27,6 +33,7 @@ export function ResetWorkbenchDialog({ onReset }: { onReset: () => Promise<void>
   return (
     <Dialog open={open} onOpenChange={next => {
       if (!busy) {
+        if (next) resetAtOpen.current = onReset
         setOpen(next)
       }
     }}>
@@ -36,7 +43,7 @@ export function ResetWorkbenchDialog({ onReset }: { onReset: () => Promise<void>
       <DialogContent className="sm:max-w-sm" showCloseButton={false}
         onOpenAutoFocus={event => { event.preventDefault(); cancel.current?.focus() }}>
         <DialogTitle>{t('resetTitle')}</DialogTitle>
-        <DialogDescription>{t('resetDescription')}</DialogDescription>
+        <DialogDescription>{t(environment === 'api' ? 'resetSharedDescription' : 'resetDescription')}</DialogDescription>
         <DialogFooter>
           <Button ref={cancel} variant="outline" disabled={busy} onClick={() => setOpen(false)}>{t('resetCancel')}</Button>
           <Button className={resetColor} disabled={busy} onClick={confirm}>{t(busy ? 'resetPending' : 'reset')}</Button>

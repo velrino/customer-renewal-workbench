@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Customer Renewal Workbench API",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "paths": {
     "/": {
@@ -27,6 +27,168 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workbench/accounts/{account}/commands": {
+      "post": {
+        "operationId": "applyAccountCommand",
+        "summary": "Update a shared account",
+        "description": "Send the account revision from the latest snapshot (zero for an untouched account). Plan dates use the supplied IANA time zone. A transaction enforces the two-slot limit. Only Cove has a critical issue to resolve. Completing a plan frees its slot.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Committed. The Firestore document listener receives the resulting state."
+          },
+          "400": {
+            "description": "Invalid request or version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Account changed or both slots are in use",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Expected application/json",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Firestore transaction unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown sample account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid workflow command or field",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteError"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "account",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ember",
+                "beacon",
+                "cove",
+                "drift",
+                "atlas",
+                "field"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "/workbench/reset": {
+      "post": {
+        "operationId": "resetSharedWorkbench",
+        "summary": "Reset the shared demo for everyone",
+        "description": "Send the board version from the latest snapshot. Clears plans, questions and owner actions for all six accounts in one transaction. Invalidates drafts opened before the reset.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reset"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Committed. The Firestore document listener receives the resulting state."
+          },
+          "400": {
+            "description": "Invalid request or version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Expected application/json",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Firestore transaction unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteError"
                 }
               }
             }
@@ -242,6 +404,159 @@
             "minimum": 0
           }
         }
+      },
+      "Command": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "action",
+              "owner",
+              "followUp"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "plan"
+                ]
+              },
+              "action": {
+                "type": "string",
+                "enum": [
+                  "resolveIssue",
+                  "budget",
+                  "reconnect",
+                  "adoption",
+                  "checkIn"
+                ]
+              },
+              "owner": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "followUp": {
+                "type": "string",
+                "format": "date"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "type",
+              "question"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "information"
+                ]
+              },
+              "question": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 400
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "complete"
+                ]
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "resolve"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "AccountCommand": {
+        "type": "object",
+        "required": [
+          "revision",
+          "timeZone",
+          "command"
+        ],
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "timeZone": {
+            "type": "string",
+            "example": "America/Sao_Paulo"
+          },
+          "command": {
+            "$ref": "#/components/schemas/Command"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Reset": {
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "WriteError": {
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "invalidRequest",
+              "unknownAccount",
+              "changed",
+              "full",
+              "ownerRequired",
+              "invalidDate",
+              "invalidAction",
+              "questionRequired",
+              "invalidCommand",
+              "storage"
+            ]
+          }
+        },
+        "additionalProperties": false
       }
     }
   }
