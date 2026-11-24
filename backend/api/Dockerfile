@@ -1,12 +1,10 @@
-FROM maven:3.9-eclipse-temurin-17 AS build
-WORKDIR /build
-COPY pom.xml .
-COPY src src
-RUN mvn -B -q package
+FROM golang:1.25-alpine AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 go build -trimpath -o /renewal-api ./cmd/api
 
-FROM eclipse-temurin:17-jre
-WORKDIR /app
-COPY --from=build /build/target/classes classes
-COPY --from=build /build/target/dependency lib
-USER 65532:65532
-ENTRYPOINT ["java", "-cp", "classes:lib/*", "api.Main"]
+FROM gcr.io/distroless/static-debian12:nonroot
+COPY --from=build /renewal-api /renewal-api
+ENTRYPOINT ["/renewal-api"]

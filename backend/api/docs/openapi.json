@@ -1,0 +1,248 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Customer Renewal Workbench API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "Check service health",
+        "description": "Checks that the Firestore Admin API can return metadata for the configured database within three seconds. Document reads and writes are outside this check. Each instance caches healthy reads for 60 seconds and failures for five seconds. Response times are in milliseconds.",
+        "responses": {
+          "200": {
+            "description": "Firestore database metadata is available",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Firestore is unavailable or unconfigured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Health": {
+        "type": "object",
+        "required": [
+          "name",
+          "status",
+          "app_env",
+          "author",
+          "runtime",
+          "checks",
+          "cache",
+          "result_time"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "degraded"
+            ],
+            "type": "string"
+          },
+          "app_env": {
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/Author"
+          },
+          "runtime": {
+            "$ref": "#/components/schemas/Runtime"
+          },
+          "checks": {
+            "type": "object",
+            "required": [
+              "firestore"
+            ],
+            "properties": {
+              "firestore": {
+                "$ref": "#/components/schemas/Dependency"
+              }
+            }
+          },
+          "cache": {
+            "$ref": "#/components/schemas/Cache"
+          },
+          "result_time": {
+            "type": "object",
+            "required": [
+              "total",
+              "average"
+            ],
+            "properties": {
+              "total": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "average": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "Author": {
+        "type": "object",
+        "required": [
+          "name",
+          "github",
+          "linkedin",
+          "instagram",
+          "website"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "github": {
+            "type": "string"
+          },
+          "linkedin": {
+            "type": "string"
+          },
+          "instagram": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
+          }
+        }
+      },
+      "Runtime": {
+        "type": "object",
+        "required": [
+          "last_deploy",
+          "uptime"
+        ],
+        "properties": {
+          "last_deploy": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "uptime": {
+            "type": "object",
+            "required": [
+              "start",
+              "end",
+              "years",
+              "months",
+              "days",
+              "hours",
+              "minutes",
+              "seconds"
+            ],
+            "properties": {
+              "start": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "end": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "years": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "months": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "days": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "hours": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "minutes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "seconds": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "Dependency": {
+        "type": "object",
+        "required": [
+          "status",
+          "response_time"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "up",
+              "down"
+            ]
+          },
+          "response_time": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "message": {
+            "type": "string",
+            "enum": [
+              "UNAVAILABLE",
+              "TIMEOUT_EXCEEDED",
+              "CHECK_NOT_CONFIGURED"
+            ]
+          }
+        }
+      },
+      "Cache": {
+        "type": "object",
+        "required": [
+          "hit",
+          "created_at",
+          "expires_at",
+          "seconds_remaining"
+        ],
+        "properties": {
+          "hit": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "seconds_remaining": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,30 +1,26 @@
 # Renewal API
 
-`GET /` reports whether the service can read a document from Firestore. The probe reads `_health/probe`. A successful lookup counts as healthy even when the document is absent.
+Go service for the Customer Renewal Workbench. The API runs on Cloud Run in Iowa and reads metadata for the Firestore database named `default`. [Scalar API reference](https://renewal-api-43zsh4z3ja-uc.a.run.app/docs)
 
-| Response | Meaning | Per-instance cache |
-| --- | --- | --- |
-| 200, `ok` | Firestore responded | 60 seconds |
-| 503, `degraded` | Missing configuration, deadline exceeded, or dependency unavailable | 5 seconds |
+## Development
 
-Concurrent requests share one refresh. Every response includes process uptime, the snapshot creation and expiry times, and timings in milliseconds. The HTTP response sets `Cache-Control: no-store` so callers see current uptime and remaining cache time.
-
-## Run locally
-
-Use Java 17 and Maven 3.9. From this directory:
+From this directory, use the Go version specified in `go.mod`.
 
 ```sh
-mvn clean verify
 export GOOGLE_CLOUD_PROJECT=customer-renewal-workbench
 export FIRESTORE_DATABASE=default
-java -cp 'target/classes:target/dependency/*' api.Main
+go run ./cmd/api
 ```
 
-Open [the local health endpoint](http://localhost:8080/). Set `PORT` to override 8080 or `APP_ENV` to set the environment label. The Firestore client uses Application Default Credentials. For local development, use an authorized ADC identity or point `GOOGLE_APPLICATION_CREDENTIALS` to a file outside the checkout. Cloud Run uses the attached runtime service account.
+The server listens on port 8080 by default. Use `PORT` to change it and `APP_ENV` to label the environment. Local runs use Application Default Credentials. Keep credential files outside the checkout. Cloud Run uses its attached runtime identity.
 
 ## Structure
 
-- `src/main/scala/api/Main.scala` starts the HTTP server.
-- `modules/healthcheck/` under the main API package owns the HTTP contract and snapshot cache.
-- `shared/firestore/` owns the bounded Firestore read.
-- `src/test/scala/api/` exercises HTTP responses and concurrent cache access. GitHub Actions runs Maven verification for backend changes.
+- `cmd/api` starts the server and reads environment settings.
+- `internal/app` wires HTTP handlers to the server.
+- `internal/modules/health-check` manages the health response and per-instance cache.
+- `internal/shared/firestore` performs the read-only dependency check.
+- `internal/shared/utils` calculates process uptime.
+- `docs` contains the OpenAPI contract and its Scalar viewer.
+
+Run `go test -race ./...` to exercise the handler and `go vet ./...` for static checks. GitHub Actions runs both and builds the service for backend changes.
