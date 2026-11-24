@@ -16,6 +16,7 @@ import (
 
 	"renewal-api/internal/app"
 	"renewal-api/internal/modules/renewals"
+	"renewal-api/internal/modules/reviewer"
 	"renewal-api/internal/shared/firestore"
 	"renewal-api/internal/shared/observability"
 )
@@ -53,11 +54,24 @@ func main() {
 	if os.Getenv("FIRESTORE_EMULATOR_HOST") != "" {
 		check = store.CheckDocument
 	}
-	routes := app.Routes(environment, reporter.FirestoreCheck(check), hops)
-	renewals.Register(routes, store.Read, store.Update, hops, origins)
+	localAuth, err := reviewer.Enabled(os.Getenv)
+	if err != nil {
+		log.Fatal(err)
+	}
+	routes := app.Routes(environment, reporter.FirestoreCheck(check), hops, localAuth)
+	var handler http.Handler = routes
+	address := ":" + setting("PORT", "8080")
+	if localAuth {
+		private := http.NewServeMux()
+		renewals.Register(private, store.Read, store.Update, 0, []string{reviewer.WebOrigin, "http://" + reviewer.APIHost})
+		handler = reviewer.New().Routes(routes, private)
+		address = reviewer.APIHost
+	} else {
+		renewals.Register(routes, store.Read, store.Update, hops, origins)
+	}
 	server := http.Server{
-		Addr:              ":" + setting("PORT", "8080"),
-		Handler:           reporter.HTTP(routes),
+		Addr:              address,
+		Handler:           reporter.HTTP(handler),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       5 * time.Second,
 		WriteTimeout:      15 * time.Second,

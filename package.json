@@ -6,7 +6,8 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "test": "turbo run test",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "dev:reviewer": "pnpm dlx firebase-tools@15.34.1 emulators:exec --project demo-renewal-reviewer --config infra/firebase/reviewer.json --only auth,firestore \"node scripts/reviewer.mjs\""
   },
   "devDependencies": {
     "turbo": "2.11.13"

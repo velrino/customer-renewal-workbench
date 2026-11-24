@@ -5,6 +5,8 @@ import { useId } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEnvironment } from '@/shared/api/environment'
+import { toast } from '@/shared/ui/toast'
+import { reviewerEnabled, signOut } from '@/shared/api/reviewer'
 import { useTranslations } from 'next-intl'
 import { SelectDropdown } from '@/shared/ui/select-dropdown'
 import { Button } from '@/shared/ui/button'
@@ -144,6 +146,11 @@ export function Navbar({ title, onReset, onDemo }: { title?: string; onReset?: (
           )}
         </section>
         <Separator />
+        {reviewerEnabled && (
+          <Button variant="outline" onClick={() => {
+            void signOut().catch(() => toast.error('Signed out of this tab. The API could not confirm revocation.'))
+          }}>Sign out</Button>
+        )}
         <section aria-labelledby={menuId + '-links'} className="grid gap-1">
           <h3 id={menuId + '-links'} className="mb-1 text-sm font-medium">{t('links')}</h3>
           {([

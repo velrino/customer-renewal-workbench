@@ -46,7 +46,7 @@ func TestErrorDelivery(t *testing.T) {
 	dsn := strings.Replace(ingest.URL, "http://", "http://test@", 1) + "/1"
 	reporter := observability.New(dsn, "test", "test-revision")
 	check := reporter.FirestoreCheck(func(context.Context) error { return errors.New("private-diagnostic") })
-	routes := reporter.HTTP(app.Routes("test", check, 0))
+	routes := reporter.HTTP(app.Routes("test", check, 0, false))
 	var lookupTime int64
 	for i := range 2 {
 		w := httptest.NewRecorder()

@@ -92,3 +92,11 @@ Set `GOOGLE_CLOUD_PROJECT` to the Firestore project. Set `WORKBENCH_ORIGINS` to 
 Health, Scalar and the spec each have an independent read policy of 120 requests/minute per peer and 480 per instance. On master, the deployment workflow sets the service and revision maxima to two instances. Configure a project billing alert for Firestore as described in the [cost guide](../../docs/COST/README.md#controls-for-the-public-demo). Document the measured ingress topology before configuring trusted hops, and confirm the chosen identity distinguishes two networks using normal read traffic.
 
 Commands merge the updated account’s fields in a transaction. Reset replaces the account map, retaining the version watermark, cooldown and unrelated top-level fields. An invalid watermark or cooldown requires operator repair.
+
+## Local reviewer sessions
+
+From the repository root, `pnpm dev:reviewer` runs the API at `127.0.0.1:8181` with project `demo-renewal-reviewer`, Auth Emulator at port 9199 and Firestore Emulator at port 8185. The profile rejects incomplete emulator settings and Cloud Run startup. All three renewal operations require a bearer token. Health, Scalar and the OpenAPI schema are available before sign-in.
+
+In the [local Scalar reference](http://127.0.0.1:8181/docs), send the credentials from the private local file to **Reviewer → Sign in**, then use the returned token for **Bearer authentication**. Use **Sign out** to revoke it. The API verifies the password directly with the Auth Emulator and checks the account UID. It issues its own opaque, one-hour session. API restarts invalidate sessions. The browser keeps the token in tab memory.
+
+This profile assumes a trusted workstation. Firebase emulator administration is accessible to local processes, and the synthetic board permits direct document reads. Keep the loopback ports off tunnels and port-forwarding services. The production project, authentication providers and Firestore rules use their existing configuration.
