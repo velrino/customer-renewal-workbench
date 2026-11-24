@@ -46,7 +46,7 @@ import {
 
 const columns = ['name', 'status', 'evidence', 'renewal', 'adoption', 'value'] as const
 const statusStyles = {
-  review: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200',
+  review: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-white',
   investigate: 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200',
   monitor: 'bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-200',
   reviewed: 'bg-green-700 text-white',
