@@ -13,7 +13,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, Search } from 'lucide-re
 import { TextField } from '@/shared/ui/text-field'
 import { useRenewalRange } from '@/shared/renewals/hooks/useRenewalRange'
 import { DateRangePicker } from '@/shared/ui/date-range-picker'
-import { SelectDropdown } from '@/shared/ui/select-dropdown'
+import { MultiSelect } from '@/shared/ui/multi-select'
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import {
@@ -49,6 +49,9 @@ const statusStyles = {
   monitor: 'bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-200',
   steady: 'bg-muted text-muted-foreground',
 }
+const statuses = ['review', 'investigate', 'monitor', 'steady'] as const
+type QueueFilters = { query: string; filter: (typeof statuses)[number][] }
+const emptyFilters: QueueFilters = { query: '', filter: [] }
 const queuePreferenceKey = storageKey('tables', 'account-queue')
 
 const focusTitle = (node: HTMLHeadingElement | null) => {
@@ -69,7 +72,8 @@ export function Dashboard() {
   }, [readError, t])
   const { prefs, update } = usePreferenceRecord(queuePreferenceKey)
   const query = typeof prefs.query === 'string' ? prefs.query.slice(0, 100) : ''
-  const filter = ['review', 'investigate', 'monitor', 'steady'].find(status => status === prefs.filter) ?? 'all'
+  const storedFilter = prefs.filter
+  const filter = statuses.filter(status => Array.isArray(storedFilter) ? storedFilter.includes(status) : storedFilter === status)
   const sort = {
     column: columns.find(column => column === prefs.column) ?? 'renewal',
     direction: prefs.direction === 'descending' ? 'descending' : 'ascending',
@@ -88,12 +92,6 @@ export function Dashboard() {
   })
   const [racing, setRacing] = useState(false)
   const allocated = committed(changes)
-  const visible = periodAccounts.filter(
-    (a) =>
-      a.name.toLowerCase().includes(query.trim().toLowerCase()) &&
-      (filter === 'all' || attention(a, changes[a.id]) === filter),
-  ).sort(compareAccounts)
-
   function compareAccounts(a: Account, b: Account) {
     let difference: number
     switch (sort.column) {
@@ -120,12 +118,6 @@ export function Dashboard() {
   const [choosing, setChoosing] = useState(false)
   const heading = useRef<HTMLHeadingElement>(null)
   const table = useRef<HTMLTableElement>(null)
-  const candidates = periodAccounts.filter(
-    (item) =>
-      attention(item, changes[item.id]) === 'review' &&
-      changes[item.id]?.plan?.status !== 'active',
-  )
-
   function inspect(next: Account, button: HTMLButtonElement) {
     opener.current = button
     setAccount(next)
@@ -139,6 +131,8 @@ export function Dashboard() {
       previous: fmt.number(a.previousAdoption, { style: 'percent' }),
     })
   }
+  const [modalFilters, setModalFilters] = useState(emptyFilters)
+
   function renderQueue(rows: Account[], inDialog = false) {
     return (
       <div className="overflow-x-auto">
@@ -170,7 +164,11 @@ export function Dashboard() {
             </tr>
           </thead>
           <tbody>
-            {rows.map((a) => (
+            {rows.map(a => {
+              const status = attention(a, changes[a.id])
+              const badge = `mb-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[status]}`
+              const openAccount = (button: HTMLButtonElement) => inDialog ? setAccount(a) : inspect(a, button)
+              return (
               <tr
                 className="border-b last:border-0 hover:bg-muted/50"
                 key={a.id}
@@ -179,15 +177,18 @@ export function Dashboard() {
                   <button
                     data-account={a.id}
                     className="rounded-sm py-1 font-medium hover:underline"
-                    onClick={e => inDialog ? setAccount(a) : inspect(a, e.currentTarget)}
+                    onClick={e => openAccount(e.currentTarget)}
                   >
                     {a.name}
                   </button>
                 </td>
                 <td className="min-w-36 p-2">
-                  <span className={`mb-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[attention(a, changes[a.id])]}`}>
-                    {t('states.' + attention(a, changes[a.id]))}
-                  </span>
+                  {status === 'review' ? (
+                    <button type="button" className={badge + ' hover:underline focus-visible:outline-ring'}
+                      aria-label={t('reviewAccount', { name: a.name })} onClick={e => openAccount(e.currentTarget)}>
+                      {t('states.review')}
+                    </button>
+                  ) : <span className={badge}>{t('states.' + status)}</span>}
                 </td>
                 <td className="min-w-40 p-2">
                   <p className="text-xs text-muted-foreground">
@@ -212,14 +213,101 @@ export function Dashboard() {
                   {fmt.number(a.value, currency)}
                 </td>
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </table>
       </div>
     )
   }
 
-  async function runRace() {
+  function renderQueueView(members: Account[], inDialog = false) {
+    const current = inDialog ? modalFilters : { query, filter }
+    const searchId = inDialog ? 'period-queue-search' : 'queue-search'
+    function changeFilters(patch: Partial<typeof current>) {
+      if (inDialog) setModalFilters(previous => ({ ...previous, ...patch }))
+      else update(patch)
+    }
+    const visible = members.filter(
+      (a) =>
+        a.name.toLowerCase().includes(current.query.trim().toLowerCase()) &&
+        (!current.filter.length || current.filter.includes(attention(a, changes[a.id]))),
+    ).sort(compareAccounts)
+    const candidates = members.filter(
+      (item) =>
+        attention(item, changes[item.id]) === 'review' &&
+        changes[item.id]?.plan?.status !== 'active',
+    )
+    return (
+      <div className="min-w-0 space-y-3">
+        <div id={inDialog ? undefined : 'queue-filters'} className="flex flex-wrap items-center gap-2 text-sm">
+          {(members.length > 1 || current.query !== '' || current.filter.length > 0) && (
+            <>
+              <div className="relative w-full sm:w-80 lg:w-96">
+                <Search
+                  aria-hidden
+                  className="pointer-events-none absolute left-3 top-2.5 z-10 size-4 text-muted-foreground"
+                />
+                <label className="sr-only" htmlFor={searchId}>{t('search')}</label>
+                <TextField
+                  id={searchId}
+                  className="ps-9"
+                  maxLength={100}
+                  type="search"
+                  placeholder={t('searchHint')}
+                  value={current.query}
+                  onValueChange={query => changeFilters({ query })}
+                />
+              </div>
+              <MultiSelect
+                label={t('filter')}
+                allLabel={t('all')}
+                summary={!current.filter.length ? t('all') : current.filter.length === 1
+                  ? t('states.' + current.filter[0]) : t('selectedStatuses', { count: current.filter.length })}
+                options={statuses.map(value => ({ value, label: t('states.' + value) }))}
+                selected={current.filter}
+                onChange={filter => changeFilters({ filter })}
+              />
+            </>
+          )}
+          <span className="ml-auto rounded-full bg-muted px-3 py-1 text-xs font-medium">
+            {t('used', { count: allocated.length })}
+          </span>
+          {allocated.length === 1 && candidates.length >= 2 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={!ready || racing}
+              onClick={() => void runRace(candidates)}
+            >
+              {t('race', {
+                first: candidates[0].name,
+                second: candidates[1].name,
+              })}
+            </Button>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">{t('order')}</p>
+        {renderQueue(visible, inDialog)}
+        {visible.length === 0 && (
+          <div className="space-y-2 py-4 text-center">
+            <p>{t('empty')}</p>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (!inDialog) setRange(undefined)
+                changeFilters(emptyFilters)
+              }}
+            >
+              {t('clear')}
+            </Button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  async function runRace(candidates: Account[]) {
     const pair = candidates.slice(0, 2)
     if (racing || pair.length < 2 || allocated.length !== 1) return
     setRacing(true)
@@ -315,12 +403,13 @@ export function Dashboard() {
         <RenewalOverview
           onOpenQueue={(label, members, button) => {
             opener.current = button
+            setModalFilters(emptyFilters)
             setBarQueue({ label, members })
           }}
           onShowUpcoming={() => {
             const deadline = new Date(renewalDate(renewalWindowDays, referenceDay))
             setRange({ from: range?.from ?? new Date(referenceDay), to: range && range.to < deadline ? range.to : deadline })
-            update({ query: '', filter: 'all' })
+            update(emptyFilters)
           }}
           periodAccounts={periodAccounts}
           inspect={inspect}
@@ -340,68 +429,7 @@ export function Dashboard() {
             <CardTitle>{t('queue')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div id="queue-filters" className="flex flex-wrap items-center gap-2 text-sm">
-              <div className="relative w-full sm:w-56">
-                <Search
-                  aria-hidden
-                  className="pointer-events-none absolute left-3 top-2.5 z-10 size-4 text-muted-foreground"
-                />
-                <label className="sr-only" htmlFor="queue-search">{t('search')}</label>
-                <TextField
-                  id="queue-search"
-                  className="ps-9"
-                  maxLength={100}
-                  type="search"
-                  placeholder={t('searchHint')}
-                  value={query}
-                  onValueChange={query => update({ query })}
-                />
-              </div>
-              <SelectDropdown
-                label={t('filter')}
-                hideLabel
-                value={filter}
-                onValueChange={filter => update({ filter })}
-                items={[
-                  { value: 'all', label: t('all') },
-                  ...['review', 'investigate', 'monitor', 'steady'].map(value => ({
-                    value, label: t('states.' + value),
-                  })),
-                ]}
-              />
-              <span className="ml-auto rounded-full bg-muted px-3 py-1 text-xs font-medium">
-                {t('used', { count: allocated.length })}
-              </span>
-              {allocated.length === 1 && candidates.length >= 2 && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  disabled={!ready || racing}
-                  onClick={() => void runRace()}
-                >
-                  {t('race', {
-                    first: candidates[0].name,
-                    second: candidates[1].name,
-                  })}
-                </Button>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">{t('order')}</p>
-            {renderQueue(visible)}
-            {visible.length === 0 && (
-              <div className="space-y-2 py-4 text-center">
-                <p>{t('empty')}</p>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setRange(undefined)
-                    update({ query: '', filter: 'all' })
-                  }}
-                >
-                  {t('clear')}
-                </Button>
-              </div>
-            )}
+            {renderQueueView(periodAccounts)}
           </CardContent>
         </Card>
         <Dialog
@@ -415,7 +443,7 @@ export function Dashboard() {
           }}
         >
           <DialogContent
-            className={barQueue && !account ? 'max-h-[calc(100dvh-2rem)] min-w-0 overflow-y-auto sm:max-w-4xl' : 'max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl'}
+            className={barQueue && !account ? 'max-h-[calc(100dvh-2rem)] min-w-0 overflow-y-auto sm:max-w-[min(80rem,calc(100vw-3rem))]' : 'max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl'}
             onCloseAutoFocus={(event) => {
               event.preventDefault()
               const target = opener.current?.isConnected
@@ -430,7 +458,7 @@ export function Dashboard() {
                   <DialogTitle ref={focusTitle} tabIndex={-1}>{t('queue')}</DialogTitle>
                   <DialogDescription>{barQueue.label} · {fmt.number(barQueue.members.reduce((sum, a) => sum + a.value, 0), currency)}</DialogDescription>
                 </DialogHeader>
-                {renderQueue([...barQueue.members].sort(compareAccounts), true)}
+                {renderQueueView(barQueue.members, true)}
               </>
             ) : choosing ? (
               <>
