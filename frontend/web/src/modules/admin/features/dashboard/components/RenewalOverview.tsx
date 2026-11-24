@@ -47,6 +47,7 @@ const timelineKey = storageKey('charts', 'renewal-timeline')
 
 export function RenewalOverview({
   isReady,
+  demo,
   onOpenQueue,
   onShowUpcoming,
   periodAccounts,
@@ -54,6 +55,7 @@ export function RenewalOverview({
   choose,
   changes,
 }: {
+  demo: boolean
   isReady: (section: DashboardSection) => boolean
   onOpenQueue: OpenTimelineQueue
   onShowUpcoming: () => void
@@ -63,8 +65,8 @@ export function RenewalOverview({
   inspect: (a: Account, opener: HTMLButtonElement) => void
 }) {
   const dragId = useId()
-  const metricsPrefs = usePreferenceRecord(metricsKey)
-  const timeline = usePreferenceRecord(timelineKey)
+  const metricsPrefs = usePreferenceRecord(metricsKey, demo)
+  const timeline = usePreferenceRecord(timelineKey, demo)
   const expanded = timeline.prefs.expanded === true
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -104,7 +106,7 @@ export function RenewalOverview({
   ] as const
   const keys = metrics.map(metric => metric.key)
   const previousOrder = useSyncExternalStore(subscribeToStorage, () => readStorageValue(preferenceKeys.metricOrder), () => null)
-  const storedOrder = metricsPrefs.prefs.order ?? previousOrder?.split(',')
+  const storedOrder = metricsPrefs.prefs.order ?? (demo ? [] : previousOrder?.split(','))
   const orderedKeys = Array.from(new Set([...(Array.isArray(storedOrder) ? storedOrder : []), ...keys]))
     .filter((key): key is typeof keys[number] => keys.some(valid => valid === key))
   const orderedMetrics = orderedKeys.map(key => metrics.find(metric => metric.key === key)!)
@@ -114,10 +116,12 @@ export function RenewalOverview({
         if (!over || active.id === over.id) return
         const from = orderedKeys.findIndex(key => key === active.id)
         const to = orderedKeys.findIndex(key => key === over.id)
-        if (from >= 0 && to >= 0) metricsPrefs.update({ order: arrayMove(orderedKeys, from, to) })
+        if (from < 0 || to < 0) return
+        const order = arrayMove(orderedKeys, from, to)
+        metricsPrefs.update({ order })
       }}>
         <SortableContext items={orderedKeys} strategy={rectSortingStrategy}>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div data-demo-order={demo ? orderedKeys.join(',') : undefined} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {orderedMetrics.map(({ key, note, value, icon: Icon }) => !isReady(key) ? <MetricSkeleton key={key} /> : (
               <SortableMetric key={key} id={key} label={t('moveMetric', { name: t(key) })}>
                 <CardHeader className="flex items-center justify-between pe-9">

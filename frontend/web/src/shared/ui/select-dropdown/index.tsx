@@ -25,6 +25,7 @@ export function SelectDropdown({
   return (
     <div className="grid gap-1 text-sm">
       <label htmlFor={id} className={cn('font-medium', hideLabel && 'sr-only')}>{label}</label>
+      {description && <p id={`${id}-hint`} className="text-xs text-muted-foreground">{description}</p>}
       <Select.Root value={value} defaultValue={defaultValue} onValueChange={onValueChange}>
         <Select.Trigger
           id={id}
@@ -50,7 +51,6 @@ export function SelectDropdown({
           </Select.Content>
         </Select.Portal>
       </Select.Root>
-      {description && <p id={`${id}-hint`} className="text-xs text-muted-foreground">{description}</p>}
     </div>
   )
 }

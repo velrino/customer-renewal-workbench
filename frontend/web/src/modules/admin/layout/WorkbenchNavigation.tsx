@@ -1,13 +1,14 @@
 'use client'
 
-import { ArrowLeftRight, BriefcaseBusiness, ExternalLink, LayoutDashboard, UserRound, X } from 'lucide-react'
+import { ArrowLeftRight, BriefcaseBusiness, ExternalLink, LayoutDashboard, Play, UserRound, X } from 'lucide-react'
+import { useId } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEnvironment } from '@/shared/api/environment'
 import { useTranslations } from 'next-intl'
 import { SelectDropdown } from '@/shared/ui/select-dropdown'
 import { Button } from '@/shared/ui/button'
-import { DialogContent, DialogTitle, DialogTrigger } from '@/shared/ui/dialog'
+import { DialogClose, DialogContent, DialogTitle, DialogTrigger } from '@/shared/ui/dialog'
 import { ResetWorkbenchDialog } from './ResetWorkbenchDialog'
 import { ThemeDialog } from '@/shared/ui/theme-dialog'
 import { Separator } from '@/shared/ui/separator'
@@ -88,9 +89,11 @@ export function Navigation({ openUserMenu }: { openUserMenu: () => void }) {
   )
 }
 
-export function Navbar({ title, onReset }: { title?: string; onReset?: () => Promise<void> }) {
+export function Navbar({ title, onReset, onDemo }: { title?: string; onReset?: () => Promise<void>; onDemo?: () => void }) {
   const t = useTranslations('nav')
-  const { preferredEnvironment, availability, select } = useEnvironment()
+  const { environment, preferredEnvironment, availability, select } = useEnvironment()
+  const menuId = useId()
+  const environmentHint = availability === 'available' ? preferredEnvironment : availability
 
   return (
     <header className="flex h-16 items-center gap-4 px-4">
@@ -105,32 +108,59 @@ export function Navbar({ title, onReset }: { title?: string; onReset?: () => Pro
           <UserRound aria-hidden="true" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-sm" aria-describedby={undefined}>
         <DialogTitle>{t('userMenu')}</DialogTitle>
-        <SelectDropdown
-          label={t('environment')}
-          description={t(`environmentHint.${availability}`)}
-          value={preferredEnvironment}
-          onValueChange={select}
-          items={[
-            { value: 'local', label: t('local') },
-            { value: 'api', label: t('api'), disabled: availability !== 'available' },
-          ]}
-        />
-        {onReset && <ResetWorkbenchDialog onReset={onReset} />}
+        <section aria-label={t('environment')}>
+          <SelectDropdown
+            label={t('environment')}
+            description={t(`environmentHint.${environmentHint}`)}
+            value={preferredEnvironment}
+            onValueChange={select}
+            items={[
+              { value: 'local', label: t('local') },
+              { value: 'api', label: t('api'), disabled: availability !== 'available' },
+            ]}
+          />
+        </section>
         <Separator />
-        {([
-          ['github', 'https://github.com/velrino/customer-renewal-workbench'],
-          ['author', 'https://github.com/velrino/'],
-        ] as const).map(([label, href]) => (
-          <Button key={label} variant="outline" className="justify-between" asChild>
-            <a href={href} target="_blank" rel="noopener noreferrer">
-              {t(label)}
-              <span className="sr-only">{t('opensNewTab')}</span>
-              <ExternalLink aria-hidden="true" />
+        <section aria-labelledby={menuId + '-actions'} className="grid gap-3">
+          <h3 id={menuId + '-actions'} className="text-sm font-medium">{t('workbenchActions')}</h3>
+          <div className="grid gap-1">
+            <p id={menuId + '-demo'} className="text-xs text-muted-foreground">{t('demoHint')}</p>
+            <DialogClose asChild>
+              {onDemo ? (
+                <Button variant="outline" className="justify-start" onClick={onDemo} aria-describedby={menuId + '-demo'}><Play />{t('demo')}</Button>
+              ) : (
+                <Button asChild variant="outline" className="justify-start"><Link href="/#demo" aria-describedby={menuId + '-demo'}><Play />{t('demo')}</Link></Button>
+              )}
+            </DialogClose>
+          </div>
+          {onReset && (
+            <div className="grid gap-1">
+              <p id={menuId + '-reset'} className="text-xs text-muted-foreground">{t(`resetHint.${environment}`)}</p>
+              <ResetWorkbenchDialog onReset={onReset} descriptionId={menuId + '-reset'} />
+            </div>
+          )}
+        </section>
+        <Separator />
+        <section aria-labelledby={menuId + '-links'} className="grid gap-1">
+          <h3 id={menuId + '-links'} className="mb-1 text-sm font-medium">{t('links')}</h3>
+          {([
+            ['github', 'https://github.com/velrino/customer-renewal-workbench'],
+            ['author', 'https://github.com/velrino/'],
+          ] as const).map(([label, href]) => (
+            <a key={label} href={href} target="_blank" rel="noopener noreferrer"
+              aria-describedby={menuId + '-' + label}
+              aria-label={t(label) + ' · ' + t('opensNewTab')}
+              className="-mx-2 flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted">
+              <span>
+                <span id={menuId + '-' + label} className="block text-xs text-muted-foreground">{t(`linkHint.${label}`)}</span>
+                <span className="block text-sm font-medium">{t(label)}</span>
+              </span>
+              <ExternalLink aria-hidden="true" className="size-4 text-muted-foreground" />
             </a>
-          </Button>
-        ))}
+          ))}
+        </section>
       </DialogContent>
     </header>
   )

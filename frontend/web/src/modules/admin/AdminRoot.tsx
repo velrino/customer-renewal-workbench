@@ -17,7 +17,7 @@ export function AdminRoot({ children }: { children: React.ReactNode }) {
     function onEscape(event: KeyboardEvent) {
       if (event.key !== 'Escape' || event.repeat || event.isComposing || event.defaultPrevented) return
       // Check before an open overlay handles this same key and unmounts.
-      if (document.querySelector('[role="dialog"]:not([data-state="closed"]), [role="alertdialog"], [role="listbox"]:not([data-state="closed"]), [aria-roledescription="sortable"][aria-pressed="true"]')) return
+      if (document.querySelector('[data-demo-stop], [role="dialog"]:not([data-state="closed"]), [role="alertdialog"], [role="listbox"]:not([data-state="closed"]), [aria-roledescription="sortable"][aria-pressed="true"]')) return
       event.preventDefault()
       setMenuOpen(true)
     }

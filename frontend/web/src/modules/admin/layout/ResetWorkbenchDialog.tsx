@@ -9,7 +9,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle, Di
 
 const resetColor = 'bg-[#9e0812] text-white hover:bg-[#87070f]'
 
-export function ResetWorkbenchDialog({ onReset }: { onReset: () => Promise<void> }) {
+export function ResetWorkbenchDialog({ onReset, disabled, descriptionId }: {
+  onReset: () => Promise<void>
+  disabled?: boolean
+  descriptionId?: string
+}) {
   const t = useTranslations('nav')
   const limit = useTranslations('rateLimit')
   const { environment } = useEnvironment()
@@ -40,7 +44,7 @@ export function ResetWorkbenchDialog({ onReset }: { onReset: () => Promise<void>
       if (!busy) setOpen(next)
     }}>
       <DialogTrigger asChild>
-        <Button className={resetColor + ' justify-between'}>{resetLabel}<RotateCcw aria-hidden /></Button>
+        <Button disabled={disabled} aria-describedby={descriptionId} className={resetColor + ' justify-between'}>{resetLabel}<RotateCcw aria-hidden /></Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-sm" showCloseButton={false}
         onOpenAutoFocus={event => { event.preventDefault(); cancel.current?.focus() }}>
