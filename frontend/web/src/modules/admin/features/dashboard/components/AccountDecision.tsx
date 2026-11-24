@@ -87,7 +87,11 @@ export function AccountDecision({
       await save(account, revision, command)
       setDraft(null)
       setEditing(false)
-      toast.success(t('confirmed.' + command.type))
+      toast.success(t('confirmed.' + command.type), {
+        description: command.type === 'complete' && status === 'review'
+          ? t('stillNeedsReview', { name: account.name, signal: t('signals.' + evidenceKey(account, work)) })
+          : undefined,
+      })
     } catch (e) {
       const reason = e instanceof WorkflowError ? e.reason : 'storage'
       setError(reason)

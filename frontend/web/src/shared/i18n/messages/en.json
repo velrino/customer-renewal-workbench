@@ -147,6 +147,7 @@
     "simulation": "Account owner simulation",
     "resolve": "Mark critical issue resolved",
     "complete": "Mark intervention complete",
+    "stillNeedsReview": "{name} stays in Review now. {signal}",
     "confirmed": {
       "plan": "Intervention saved.",
       "information": "Information request saved. No extra slot used.",

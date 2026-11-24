@@ -10,7 +10,12 @@ export function ToastRegion() {
     <Toaster
       position="top-center"
       theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
-      toastOptions={{ classNames: { error: 'bg-[#9e0812]! border-[#9e0812]! text-white!' } }}
+      toastOptions={{
+        classNames: {
+          error: 'bg-[#9e0812]! border-[#9e0812]! text-white!',
+          success: 'bg-emerald-700! border-emerald-700! text-white! [&_[data-description]]:text-white!',
+        },
+      }}
       closeButton
       duration={6500}
     />
