@@ -85,7 +85,7 @@ function TimelineChart({ accounts, referenceDay, interval, onOpenQueue }: Timeli
               return (
                 <Tooltip key={date}>
                   <TooltipTrigger asChild>
-                    <button type="button" aria-label={dateLabel} aria-haspopup="dialog"
+                    <button type="button" data-accounts={members.map(account => account.id).join(' ')} aria-label={dateLabel} aria-haspopup="dialog"
                       onClick={event => onOpenQueue(dateLabel, members, event.currentTarget)}
                       className="relative w-1/2 max-w-14 rounded-t bg-primary hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       style={{ height: `${total / (step * 4) * 100}%` }} />

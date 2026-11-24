@@ -1,13 +1,14 @@
 'use client'
 
-import { BriefcaseBusiness, ExternalLink, LayoutDashboard, UserRound, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { ArrowLeftRight, BriefcaseBusiness, ExternalLink, LayoutDashboard, Play, UserRound, X } from 'lucide-react'
+import { useId } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEnvironment } from '@/shared/api/environment'
 import { useTranslations } from 'next-intl'
 import { SelectDropdown } from '@/shared/ui/select-dropdown'
 import { Button } from '@/shared/ui/button'
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/shared/ui/dialog'
+import { DialogClose, DialogContent, DialogTitle, DialogTrigger } from '@/shared/ui/dialog'
 import { ResetWorkbenchDialog } from './ResetWorkbenchDialog'
 import { ThemeDialog } from '@/shared/ui/theme-dialog'
 import { Separator } from '@/shared/ui/separator'
@@ -24,20 +25,35 @@ import {
   useSidebar,
 } from '@/shared/ui/sidebar'
 
-export function Navigation() {
+export function Navigation({ openUserMenu }: { openUserMenu: () => void }) {
   const t = useTranslations('nav')
   const { environment } = useEnvironment()
+  const isDashboard = usePathname() === '/'
   const { setOpenMobile, isMobile } = useSidebar()
   return (
     <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader>
-        <div className="flex h-12 items-center gap-2 overflow-hidden px-2 group-data-[collapsible=icon]:p-0">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <div className="flex h-12 items-center gap-2 px-2 group-data-[collapsible=icon]:p-0">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground group-data-[collapsible=icon]:hidden">
             <BriefcaseBusiness size={17} />
           </span>
-          <div className="truncate text-sm group-data-[collapsible=icon]:hidden">
-            <strong>{t('brand')}</strong>
-            <div className="text-xs">{t(environment)}</div>
+          <div className="flex min-w-0 flex-col items-start">
+            <strong className="truncate text-sm group-data-[collapsible=icon]:hidden">{t('brand')}</strong>
+            <Button
+              type="button"
+              size="sm"
+              className="h-6 rounded-full bg-slate-700 px-2 text-xs font-semibold text-white hover:bg-slate-800 group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:rounded-lg group-data-[collapsible=icon]:p-0"
+              aria-label={t('environmentMenu', { environment: t(environment) })}
+              title={t('environmentMenu', { environment: t(environment) })}
+              aria-haspopup="dialog"
+              onClick={() => {
+                if (isMobile) setOpenMobile(false)
+                openUserMenu()
+              }}
+            >
+              <span className="uppercase group-data-[collapsible=icon]:hidden">{t(environment)}</span>
+              <ArrowLeftRight aria-hidden="true" className="hidden group-data-[collapsible=icon]:block" />
+            </Button>
           </div>
           {isMobile && (
             <Button
@@ -58,7 +74,7 @@ export function Navigation() {
             <SidebarGroupLabel>{t('workspace')}</SidebarGroupLabel>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip={t('dashboard')} aria-label={t('dashboard')} aria-current="page" isActive asChild>
+                <SidebarMenuButton tooltip={t('dashboard')} aria-label={t('dashboard')} aria-current={isDashboard ? 'page' : undefined} isActive={isDashboard} asChild>
                   <Link href="/" onClick={() => setOpenMobile(false)}>
                     <LayoutDashboard />
                     <span>{t('dashboard')}</span>
@@ -73,42 +89,31 @@ export function Navigation() {
   )
 }
 
-export function Navbar({ onReset }: { onReset: () => Promise<void> }) {
+export function Navbar({ title, onReset, onDemo }: { title?: string; onReset?: () => Promise<void>; onDemo?: () => void }) {
   const t = useTranslations('nav')
-  const { preferredEnvironment, availability, select } = useEnvironment()
-  const [menuOpen, setMenuOpen] = useState(false)
-
-  useEffect(() => {
-    function onEscape(event: KeyboardEvent) {
-      if (event.key !== 'Escape' || event.repeat || event.isComposing || event.defaultPrevented) return
-      // Check before an open overlay handles this same key and unmounts.
-      if (document.querySelector('[role="dialog"]:not([data-state="closed"]), [role="alertdialog"], [role="listbox"]:not([data-state="closed"]), [aria-roledescription="sortable"][aria-pressed="true"]')) return
-      event.preventDefault()
-      setMenuOpen(true)
-    }
-    window.addEventListener('keydown', onEscape, true)
-    return () => window.removeEventListener('keydown', onEscape, true)
-  }, [])
+  const { environment, preferredEnvironment, availability, select } = useEnvironment()
+  const menuId = useId()
+  const environmentHint = availability === 'available' ? preferredEnvironment : availability
 
   return (
     <header className="flex h-16 items-center gap-4 px-4">
       <SidebarTrigger variant="outline" />
       <Separator orientation="vertical" className="max-h-6" />
       <span className="text-sm font-medium">
-        {t('overview')}
+        {title ?? t('overview')}
       </span>
       <ThemeDialog />
-      <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
-        <DialogTrigger asChild>
-          <Button variant="secondary" size="icon" className="rounded-full" aria-keyshortcuts="Escape" aria-label={t('userMenu')} title={t('userMenu')}>
-            <UserRound aria-hidden="true" />
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
-          <DialogTitle>{t('userMenu')}</DialogTitle>
+      <DialogTrigger asChild>
+        <Button variant="secondary" size="icon" className="rounded-full" aria-keyshortcuts="Escape" aria-label={t('userMenu')} title={t('userMenu')}>
+          <UserRound aria-hidden="true" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-sm" aria-describedby={undefined}>
+        <DialogTitle>{t('userMenu')}</DialogTitle>
+        <section aria-label={t('environment')}>
           <SelectDropdown
             label={t('environment')}
-            description={t(`environmentHint.${availability}`)}
+            description={t(`environmentHint.${environmentHint}`)}
             value={preferredEnvironment}
             onValueChange={select}
             items={[
@@ -116,22 +121,47 @@ export function Navbar({ onReset }: { onReset: () => Promise<void> }) {
               { value: 'api', label: t('api'), disabled: availability !== 'available' },
             ]}
           />
-          <ResetWorkbenchDialog onReset={onReset} />
-          <Separator />
+        </section>
+        <Separator />
+        <section aria-labelledby={menuId + '-actions'} className="grid gap-3">
+          <h3 id={menuId + '-actions'} className="text-sm font-medium">{t('workbenchActions')}</h3>
+          <div className="grid gap-1">
+            <p id={menuId + '-demo'} className="text-xs text-muted-foreground">{t('demoHint')}</p>
+            <DialogClose asChild>
+              {onDemo ? (
+                <Button variant="outline" className="justify-start" onClick={onDemo} aria-describedby={menuId + '-demo'}><Play />{t('demo')}</Button>
+              ) : (
+                <Button asChild variant="outline" className="justify-start"><Link href="/#demo" aria-describedby={menuId + '-demo'}><Play />{t('demo')}</Link></Button>
+              )}
+            </DialogClose>
+          </div>
+          {onReset && (
+            <div className="grid gap-1">
+              <p id={menuId + '-reset'} className="text-xs text-muted-foreground">{t(`resetHint.${environment}`)}</p>
+              <ResetWorkbenchDialog onReset={onReset} descriptionId={menuId + '-reset'} />
+            </div>
+          )}
+        </section>
+        <Separator />
+        <section aria-labelledby={menuId + '-links'} className="grid gap-1">
+          <h3 id={menuId + '-links'} className="mb-1 text-sm font-medium">{t('links')}</h3>
           {([
             ['github', 'https://github.com/velrino/customer-renewal-workbench'],
             ['author', 'https://github.com/velrino/'],
           ] as const).map(([label, href]) => (
-            <Button key={label} variant="outline" className="justify-between" asChild>
-              <a href={href} target="_blank" rel="noopener noreferrer">
-                {t(label)}
-                <span className="sr-only">{t('opensNewTab')}</span>
-                <ExternalLink aria-hidden="true" />
-              </a>
-            </Button>
+            <a key={label} href={href} target="_blank" rel="noopener noreferrer"
+              aria-describedby={menuId + '-' + label}
+              aria-label={t(label) + ' · ' + t('opensNewTab')}
+              className="-mx-2 flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted">
+              <span>
+                <span id={menuId + '-' + label} className="block text-xs text-muted-foreground">{t(`linkHint.${label}`)}</span>
+                <span className="block text-sm font-medium">{t(label)}</span>
+              </span>
+              <ExternalLink aria-hidden="true" className="size-4 text-muted-foreground" />
+            </a>
           ))}
-        </DialogContent>
-      </Dialog>
+        </section>
+      </DialogContent>
     </header>
   )
 }

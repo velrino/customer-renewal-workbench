@@ -9,10 +9,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle, Di
 
 const resetColor = 'bg-[#9e0812] text-white hover:bg-[#87070f]'
 
-export function ResetWorkbenchDialog({ onReset }: { onReset: () => Promise<void> }) {
+export function ResetWorkbenchDialog({ onReset, disabled, descriptionId }: {
+  onReset: () => Promise<void>
+  disabled?: boolean
+  descriptionId?: string
+}) {
   const t = useTranslations('nav')
   const limit = useTranslations('rateLimit')
   const { environment } = useEnvironment()
+  const resetLabel = t('reset', { environment: t(environment) })
   const cancel = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
   useHoldEnvironment(open)
@@ -39,7 +44,7 @@ export function ResetWorkbenchDialog({ onReset }: { onReset: () => Promise<void>
       if (!busy) setOpen(next)
     }}>
       <DialogTrigger asChild>
-        <Button className={resetColor + ' justify-between'}>{t('reset')}<RotateCcw aria-hidden /></Button>
+        <Button disabled={disabled} aria-describedby={descriptionId} className={resetColor + ' justify-between'}>{resetLabel}<RotateCcw aria-hidden /></Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-sm" showCloseButton={false}
         onOpenAutoFocus={event => { event.preventDefault(); cancel.current?.focus() }}>
@@ -47,7 +52,7 @@ export function ResetWorkbenchDialog({ onReset }: { onReset: () => Promise<void>
         <DialogDescription>{t(environment === 'api' ? 'resetSharedDescription' : 'resetDescription')}</DialogDescription>
         <DialogFooter>
           <Button ref={cancel} variant="outline" disabled={busy} onClick={() => setOpen(false)}>{t('resetCancel')}</Button>
-          <Button className={resetColor} disabled={busy} onClick={confirm}>{t(busy ? 'resetPending' : 'reset')}</Button>
+          <Button className={resetColor} disabled={busy} onClick={confirm}>{busy ? t('resetPending') : resetLabel}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

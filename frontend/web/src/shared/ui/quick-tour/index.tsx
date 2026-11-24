@@ -98,10 +98,12 @@ export function QuickTour({
   invitationKey,
   invitationBackground,
   autoStart = false,
+  onClose,
 }: {
   steps: readonly TourStep[]
   invitationKey?: string
   autoStart?: boolean
+  onClose?: () => void
   invitationBackground?: React.ReactNode
 }) {
   const t = useTranslations('tour')
@@ -110,7 +112,7 @@ export function QuickTour({
     () => invitationKey ? readStorageValue(invitationKey) : null,
     () => undefined,
   )
-  const [localStep, setLocalStep] = useState<number | null>(null)
+  const [localStep, setLocalStep] = useState<number | null>(autoStart && !invitationKey ? 0 : null)
   const savedIndex = steps.findIndex(step => saved === `step:${step.target}`)
   const index = invitationKey ? Math.max(0, savedIndex) : localStep ?? 0
   const ended = saved === 'completed' || saved === 'skipped'
@@ -130,6 +132,7 @@ export function QuickTour({
   function closeTour(choice: 'completed' | 'skipped') {
     if (invitationKey) writeStorageValue(invitationKey, choice)
     else setLocalStep(null)
+    onClose?.()
   }
   const nextButton = useRef<HTMLButtonElement>(null)
   const step = steps[index]

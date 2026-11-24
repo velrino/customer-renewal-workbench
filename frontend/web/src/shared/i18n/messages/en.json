@@ -9,13 +9,14 @@
     "close": "Close",
     "environment": "Preferred environment",
     "local": "Local",
-    "api": "Shared API",
+    "api": "API",
     "environmentHint": {
-      "checking": "Using Local while checking API availability.",
-      "available": "In API mode, everyone can see changes and reset the shared demo.",
-      "unavailable": "API is unavailable. The dashboard is using Local."
+      "checking": "Checking API availability.",
+      "local": "Save work in this browser.",
+      "api": "Changes are shared with all reviewers.",
+      "unavailable": "API is offline. Local is active."
     },
-    "reset": "Reset workbench",
+    "reset": "Reset {environment} workbench",
     "resetTitle": "Reset this workbench?",
     "resetDescription": "This permanently clears all saved interventions, information requests, account updates and preferences in this browser. The dashboard will reopen with the six original accounts.",
     "resetSharedDescription": "This clears all plans, requests and owner updates in the shared demo for everyone, and frees both weekly slots.",
@@ -23,7 +24,20 @@
     "resetPending": "Resetting…",
     "resetRateLimited": "Too many reset requests.",
     "resetError": "The reset did not finish. Check the current portfolio and try again.",
+    "demo": "Demo",
+    "workbenchActions": "Workbench actions",
+    "demoHint": "Try the workbench in Local.",
+    "resetHint": {
+      "local": "Clear saved work and settings here.",
+      "api": "Reset the shared board for everyone."
+    },
+    "links": "Links",
+    "linkHint": {
+      "github": "Browse the project source.",
+      "author": "Visit the developer’s profile."
+    },
     "userMenu": "User menu",
+    "environmentMenu": "{environment} · User menu",
     "github": "GitHub",
     "author": "Author",
     "opensNewTab": "Opens in a new tab",
@@ -32,6 +46,51 @@
     "dark": "Dark",
     "system": "Use device setting",
     "overview": "Overview"
+  },
+  "welcome": {
+    "title": "How would you like to start?",
+    "description": "Track which customers are due to renew their contracts and decide who needs a follow-up.",
+    "demo": {
+      "label": "Watch a demo",
+      "hint": "Take the Quick Tour, then watch a sample customer’s renewal from start to finish."
+    },
+    "tour": {
+      "label": "Take the Quick Tour",
+      "hint": "See where to find renewal dates, customer risks and your team’s workload."
+    },
+    "explore": {
+      "label": "Explore on my own",
+      "hint": "Open the dashboard and choose a customer to review yourself."
+    }
+  },
+  "demo": {
+    "modeTitle": "Start with the Quick Tour?",
+    "modeHint": "The Quick Tour introduces the dashboard before the automated Ember demo.",
+    "withTour": "With Quick Tour",
+    "withoutTour": "Skip Quick Tour",
+    "move": "Drag the grip to swap Accounts and Portfolio value. All four cards can be moved.",
+    "timeline": "Open Ember’s renewal date on the daily timeline.",
+    "queue": "Choose Ember from the account queue.",
+    "overview": "Ember renews in seven days. Budget approval is still pending.",
+    "plan": "Plan an intervention to confirm budget approval.",
+    "owner": "Assign a person to follow up with the budget approver.",
+    "date": "Choose a future follow-up date before renewal.",
+    "save": "Save the intervention. Ember now uses one of the two slots.",
+    "actions": "Open Owner actions to review the saved intervention.",
+    "complete": "Complete the intervention to release the slot.",
+    "stop": "Stop demo",
+    "finished": "Demo complete",
+    "result": "Ember’s intervention is complete and its slot is available again.",
+    "keepHint": "Continue keeps the card order and saves the example if Ember has no plan and a slot is free. Reset demo discards the practice run.",
+    "existingHint": "Your existing local plans were preserved.",
+    "reset": "Reset demo",
+    "continue": "Continue",
+    "error": "The demo could not finish this step. You can start it again from the User menu.",
+    "storeError": "Could not save the example in this browser. Try again or reset the demo."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "back": "Back to dashboard"
   },
   "rateLimit": {
     "retryAfter": "Try again in {seconds, plural, one {# second} other {# seconds}}."
@@ -179,7 +238,7 @@
     "unavailable": "Loading saved work…",
     "capacityNames": "Allocated to {names}",
     "noReview": "No accounts are flagged for review.",
-    "tourAccounts": "Select Accounts to see a customer’s renewal date, usage and sponsor feedback. Reviewing an account uses no slots.",
+    "tourAccounts": "Drag the grip on any of the four cards to rearrange the dashboard. Select Accounts to review a renewal.",
     "tourRange": "Choose a start and end date, then select Apply range. The dashboard shows renewals in that period and remembers it when you return.",
     "tourRenewals": "Select this card to see which accounts renew in the next 30 days. Check what needs attention before each deadline.",
     "tourAttention": "Each flagged account has a reason to look closer. Read the concern alongside the renewal date before deciding who needs your help.",

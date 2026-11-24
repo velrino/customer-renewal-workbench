@@ -115,11 +115,11 @@ export function AccountDecision({
     return fmt.dateTime(new Date(value + 'T00:00:00Z'), { dateStyle: 'medium', timeZone: 'UTC' })
   }
   return (
-    <div className="space-y-4 text-sm">
+    <div data-demo-account-status={plan?.status} className="space-y-4 text-sm">
       <Tabs.Root defaultValue="overview">
         <Tabs.List aria-label={t('accountSections')} className="mb-4 grid grid-cols-3 rounded-lg bg-muted p-1">
           {(['overview', 'plan', 'owner'] as const).map(section => (
-            <Tabs.Trigger key={section} value={section}
+            <Tabs.Trigger data-demo-tab={section} key={section} value={section}
               className="rounded-md px-1 py-1.5 text-sm font-medium text-muted-foreground focus-visible:outline-ring data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
               {t('accountTabs.' + section)}
             </Tabs.Trigger>
@@ -172,13 +172,13 @@ export function AccountDecision({
               >
                 {t('ask')}
               </Button>
-              <Button className="ms-auto" disabled={busy || !ready} onClick={() => edit('plan')}>
+              <Button data-demo="plan" className="ms-auto" disabled={busy || !ready} onClick={() => edit('plan')}>
                 {t(plan?.status === 'active' ? 'editPlan' : 'newPlan')}
               </Button>
             </div>
           )}
           {editing && draft && (
-            <form
+            <form data-demo="editor"
               noValidate
               className="space-y-3 rounded-md border p-3"
               onSubmit={(e) => {
@@ -300,6 +300,7 @@ export function AccountDecision({
                 {plan?.status === 'active' && (
                   <Button
                     disabled={busy || !ready}
+                    data-demo="complete"
                     className="ms-auto bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-800 dark:hover:bg-emerald-700"
                     onClick={() =>
                       void submit({ type: 'complete' }, work!.revision)

@@ -1,15 +1,16 @@
 'use client'
 
 import { RelativeDate } from '@/shared/ui/relative-date'
-import { clearWorkbenchPreferences, storageKey } from '@/shared/storage/local-storage'
+import { clearWorkbenchPreferences, readStorageValue, storageKey, subscribeToStorage, writeStorageValue } from '@/shared/storage/local-storage'
 import { usePreferenceRecord } from '@/shared/storage/local-storage/preferences/use-preference-record'
 import { preferenceKeys } from '@/shared/storage/local-storage/preferences'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import type { DateRange } from 'react-day-picker'
 import { useFormatter, useTranslations } from 'next-intl'
 import { QuickTour } from '@/shared/ui/quick-tour'
 import { toast } from '@/shared/ui/toast'
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, Search } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, ArrowUpDown, ChevronRight, Compass, Map, Play, Search } from 'lucide-react'
 import { TextField } from '@/shared/ui/text-field'
 import { useRenewalRange } from '@/shared/renewals/hooks/useRenewalRange'
 import { DateRangePicker } from '@/shared/ui/date-range-picker'
@@ -20,9 +21,12 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/shared/ui/dialog'
+import { DemoResult } from './components/DemoResult'
+import { DemoPlayback } from './components/DemoPlayback'
 import { Navbar } from '../../layout/WorkbenchNavigation'
 import { accounts, currency, type Account } from '@/shared/renewals/accounts'
 import { Skeleton } from '@/shared/ui/skeleton'
@@ -67,24 +71,102 @@ function followUpFor(days: number) {
 }
 
 export function Dashboard() {
-  const { environment } = useEnvironment()
-  return environment === 'api' ? <SharedDashboard /> : <LocalDashboard />
+  const { environment, select } = useEnvironment()
+  const t = useTranslations('demo')
+  const welcome = useTranslations('welcome')
+  const tourProgress = useSyncExternalStore(
+    subscribeToStorage,
+    () => readStorageValue(preferenceKeys.dashboardTour),
+    () => undefined,
+  )
+  const [choosing, setChoosing] = useState(false)
+  const [mode, setMode] = useState<DemoMode>()
+  function startDemo(choice: DemoMode) {
+    select('local')
+    setMode(choice)
+    setChoosing(false)
+  }
+  useEffect(() => {
+    if (window.location.hash === '#demo') {
+      history.replaceState(history.state, '', location.pathname + location.search)
+      if (readStorageValue(preferenceKeys.dashboardTour) !== null) setChoosing(true)
+    }
+  }, [])
+  const controls = { onDemo: () => setChoosing(true), choosingDemo: choosing || tourProgress == null }
+  function chooseWelcome(choice: 'demo' | 'tour' | 'explore') {
+    if (choice === 'demo') startDemo('withTour')
+    writeStorageValue(preferenceKeys.dashboardTour, choice === 'tour' ? 'started' : 'skipped')
+  }
+  return (
+    <>
+      {mode && environment === 'local' ? (
+        <LocalDashboard key={mode} mode={mode} onExit={() => setMode(undefined)} {...controls} />
+      ) : environment === 'api' ? (
+        <SharedDashboard {...controls} />
+      ) : (
+        <LocalDashboard {...controls} />
+      )}
+      <Dialog open={tourProgress === null}>
+        <DialogContent showCloseButton={false} className="max-h-[calc(100dvh-2rem)] overflow-y-auto"
+          onEscapeKeyDown={event => event.preventDefault()}
+          onInteractOutside={event => event.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>{welcome('title')}</DialogTitle>
+            <DialogDescription>{welcome('description')}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2">
+            {([['demo', Play], ['tour', Map], ['explore', Compass]] as const).map(([choice, Icon]) => (
+              <Button key={choice} variant={choice === 'demo' ? 'default' : 'outline'} className="h-auto justify-start gap-3 whitespace-normal py-3 text-start"
+                aria-labelledby={`welcome-${choice}`} aria-describedby={`welcome-${choice}-hint`}
+                onClick={() => chooseWelcome(choice)}>
+                <Icon aria-hidden="true" />
+                <span>
+                  <span id={`welcome-${choice}`} className="block">{welcome(`${choice}.label`)}</span>
+                  <span id={`welcome-${choice}-hint`} className={`block text-xs font-normal ${choice === 'demo' ? '' : 'text-muted-foreground'}`}>{welcome(`${choice}.hint`)}</span>
+                </span>
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={choosing && tourProgress != null} onOpenChange={setChoosing}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('modeTitle')}</DialogTitle>
+            <DialogDescription>{t('modeHint')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => startDemo('withoutTour')}>{t('withoutTour')}</Button>
+            <Button onClick={() => startDemo('withTour')}>{t('withTour')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
 }
 
-function SharedDashboard() {
+type DemoMode = 'withTour' | 'withoutTour'
+type DemoControls = { onDemo: () => void; choosingDemo: boolean; mode?: DemoMode; onExit?: () => void }
+
+function SharedDashboard(props: DemoControls) {
   const work = useSharedRenewalWork()
-  return <DashboardView work={work} shared />
+  return <DashboardView work={work} shared {...props} />
 }
 
-function LocalDashboard() {
-  const work = useRenewalWork()
-  return <DashboardView work={work} shared={false} />
+function LocalDashboard(props: DemoControls) {
+  const work = useRenewalWork(Boolean(props.mode))
+  return <DashboardView work={work} shared={false} {...props} />
 }
 
-function DashboardView({ work, shared }: { work: ReturnType<typeof useRenewalWork>; shared: boolean }) {
+function DashboardView({ work, shared, mode, choosingDemo, onDemo, onExit }: DemoControls & {
+  work: ReturnType<typeof useRenewalWork>; shared: boolean
+}) {
+  const demo = Boolean(mode)
   const referenceDay = today()
   const t = useTranslations('dashboard')
   const nav = useTranslations('nav')
+  const [quickTourOpen, setQuickTourOpen] = useState(mode === 'withTour')
+  const [finishedOrder, setFinishedOrder] = useState<string[] | null>(null)
   const { changes, ready, readError, retryRead, resetWork, save, saveTwo } = work
   const loading = useDashboardLoading(ready)
   function retryDashboard() {
@@ -95,7 +177,7 @@ function DashboardView({ work, shared }: { work: ReturnType<typeof useRenewalWor
     if (readError) toast.error(t('storageError'), { id: 'workbench-read-error', duration: Infinity })
     else toast.dismiss('workbench-read-error')
   }, [readError, t])
-  const { prefs, update } = usePreferenceRecord(queuePreferenceKey)
+  const { prefs, update } = usePreferenceRecord(queuePreferenceKey, demo)
   const query = typeof prefs.query === 'string' ? prefs.query.slice(0, 100) : ''
   const storedFilter = prefs.filter
   const filter = statuses.filter(status => Array.isArray(storedFilter) ? storedFilter.includes(status) : storedFilter === status)
@@ -108,7 +190,10 @@ function DashboardView({ work, shared }: { work: ReturnType<typeof useRenewalWor
     from: new Date(renewalDate(Math.min(...renewalDays), referenceDay)),
     to: new Date(renewalDate(Math.max(...renewalDays), referenceDay)),
   }
-  const { range, setRange } = useRenewalRange()
+  const savedRange = useRenewalRange()
+  const [practiceRange, setPracticeRange] = useState<DateRange>()
+  const range = demo ? practiceRange : savedRange.range
+  const setRange = demo ? setPracticeRange : savedRange.setRange
   const start = range?.from?.toISOString().slice(0, 10)
   const end = range?.to?.toISOString().slice(0, 10)
   const periodAccounts = sortedQueue(changes).filter(account => {
@@ -370,15 +455,16 @@ function DashboardView({ work, shared }: { work: ReturnType<typeof useRenewalWor
       setRacing(false)
     }
   }
+  async function resetWorkbench() {
+    await resetWork()
+    if (!shared) {
+      clearWorkbenchPreferences()
+      window.location.reload()
+    }
+  }
   return (
     <>
-      <Navbar onReset={async () => {
-        await resetWork()
-        if (!shared) {
-          clearWorkbenchPreferences()
-          window.location.reload()
-        }
-      }} />
+      <Navbar onDemo={onDemo} onReset={resetWorkbench} />
       <main className="mx-auto w-full max-w-7xl space-y-4 px-4 py-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1
@@ -391,9 +477,10 @@ function DashboardView({ work, shared }: { work: ReturnType<typeof useRenewalWor
           <div className="flex flex-wrap items-center gap-2">
             {loading.complete ? (
               <>
-                <QuickTour
+                {!choosingDemo && (!demo || quickTourOpen) && <QuickTour
                   autoStart
-                  invitationKey={preferenceKeys.dashboardTour}
+                  invitationKey={demo ? undefined : preferenceKeys.dashboardTour}
+                  onClose={demo ? () => setQuickTourOpen(false) : undefined}
                   steps={[
                     {
                       target: 'renewal-date-range',
@@ -426,7 +513,7 @@ function DashboardView({ work, shared }: { work: ReturnType<typeof useRenewalWor
                       explanation: t('tourQueue'),
                     },
                   ]}
-                />
+                />}
                 <DateRangePicker id="renewal-date-range" label={t('renewalRange')} value={range} onChange={setRange} fullRange={portfolioRange} />
               </>
             ) : !readError && <Skeleton className="h-9 w-56" />}
@@ -436,6 +523,7 @@ function DashboardView({ work, shared }: { work: ReturnType<typeof useRenewalWor
           <>
             {!loading.complete && <span role="status" className="sr-only">{t('unavailable')}</span>}
             <RenewalOverview
+              demo={demo}
               isReady={loading.isReady}
               onOpenQueue={(label, members, button) => {
                 opener.current = button
@@ -444,7 +532,7 @@ function DashboardView({ work, shared }: { work: ReturnType<typeof useRenewalWor
               }}
               onShowUpcoming={() => {
                 const deadline = new Date(renewalDate(renewalWindowDays, referenceDay))
-                setRange({ from: range?.from ?? new Date(referenceDay), to: range && range.to < deadline ? range.to : deadline })
+                setRange({ from: range?.from ?? new Date(referenceDay), to: range?.to && range.to < deadline ? range.to : deadline })
                 update(emptyFilters)
               }}
               periodAccounts={periodAccounts}
@@ -530,15 +618,18 @@ function DashboardView({ work, shared }: { work: ReturnType<typeof useRenewalWor
             ) : (
               account && (
                 <>
-                  <DialogHeader>
-                    <DialogTitle tabIndex={-1} ref={focusTitle}>
+                  <DialogHeader className="min-w-0 text-start">
+                    <Button variant="ghost" size="sm" className="-ms-2 w-fit gap-1 text-muted-foreground"
+                      onClick={() => setAccount(null)}>
+                      <ArrowLeft aria-hidden="true" />{t(barQueue || opener.current?.closest('#account-queue') ? 'backToQueue' : 'decisionBack')}
+                    </Button>
+                    <DialogTitle className="break-words pe-6" tabIndex={-1} ref={focusTitle}>
                       {account.name}
                     </DialogTitle>
                     <DialogDescription className="sr-only">
                       {t('detail', { name: account.name })}
                     </DialogDescription>
                   </DialogHeader>
-                  {barQueue && <Button variant="outline" onClick={() => setAccount(null)}>{t('backToQueue')}</Button>}
                   <AccountDecision
                     key={account.id}
                     account={account}
@@ -575,6 +666,16 @@ function DashboardView({ work, shared }: { work: ReturnType<typeof useRenewalWor
           </DialogContent>
         </Dialog>
       </main>
+      {demo && !quickTourOpen && onExit && loading.complete && !finishedOrder && (
+        <DemoPlayback onStop={onExit} onFinish={order => {
+          setAccount(null)
+          setBarQueue(null)
+          setFinishedOrder(order)
+        }} />
+      )}
+      {finishedOrder && onExit && changes.ember?.plan && (
+        <DemoResult order={finishedOrder} plan={changes.ember.plan} onExit={onExit} onReset={resetWorkbench} />
+      )}
     </>
   )
 }
