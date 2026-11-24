@@ -147,8 +147,6 @@ Start in a fresh browser profile and skip or finish the quick tour.
 
 Read each row across. The right column describes an option and the condition that would justify it. [Full visual plan](docs/PLANS/0-START/plan.svg) · [Editable source](docs/PLANS/0-START/plan.excalidraw)
 
-[![Delivered and at scale diagrams showing API writes, Firestore subscriptions and browser storage](docs/PLANS/0-START/delivered-and-at-scale.png)](docs/PLANS/0-START/plan.svg)
-
 | Delivered | At scale |
 | --- | --- |
 | Six fictional renewals share two intervention slots. Evidence, an owner and a follow-up date make each choice reviewable. | When teams manage separate portfolios, use contractual dates and allocate capacity per team and planning period. |
