@@ -2,7 +2,19 @@
 
 **TL;DR** — A Customer Success manager oversees 40 accounts and can help two this week. This Hacker Eval prototype uses six fictional B2B accounts to show how the manager can review renewal evidence, choose interventions, and assign follow-ups. The head of Customer Success is the buyer.
 
-[Live dashboard](https://customer-renewal-workbench.vercel.app/) · [Account queue](https://customer-renewal-workbench.vercel.app/#account-queue) · [Frontend guide](frontend/web/README.md) · [Project plan](docs/PLANS/0-START/plan.excalidraw) · [Plan preview](docs/PLANS/0-START/plan.svg) · [Cost estimates](docs/COST/README.md)
+[Live dashboard](https://customer-renewal-workbench.vercel.app/) · [Account queue](https://customer-renewal-workbench.vercel.app/#account-queue) · [Frontend guide](frontend/web/README.md) · [Architecture](#architecture) · [Renewal flows](#renewal-flows) · [Monthly costs](#monthly-costs) · [Project plan](docs/PLANS/0-START/plan.excalidraw) · [Plan preview](docs/PLANS/0-START/plan.svg)
+
+## Architecture
+
+The static Next.js dashboard offers two persistence modes. **Local** stores work in the current browser’s IndexedDB. **Shared API** sends writes to Go on Cloud Run and listens directly to Firestore for updates. The arrows show the ownership of each write and the return path for a saved decision.
+
+[![Runtime architecture with the browser, Go API, Firestore and telemetry](docs/ARCHITECTURE/architecture.svg)](docs/ARCHITECTURE/architecture.svg)
+
+[Editable Excalidraw source](docs/ARCHITECTURE/architecture.excalidraw)
+
+### Local and shared writes
+
+A local save validates the account revision and weekly capacity in an IndexedDB transaction. A shared save makes those checks in a Firestore transaction. An open editor keeps its original environment if connectivity changes. [API guide](backend/api/README.md)
 
 ## Run locally
 
@@ -16,6 +28,18 @@ pnpm dev --filter=renewal-workbench-web
 To start both services, install the Go version in [backend/api/go.mod](backend/api/go.mod) and run `pnpm dev`. See the [API guide](backend/api/README.md) to configure the shared Firestore workbench.
 
 Open the [local dashboard](http://127.0.0.1:3000/). The [frontend guide](frontend/web/README.md) covers the folder structure, build, and telemetry setup.
+
+## Renewal flows
+
+Select a preview to read the full sequence. Each diagram also links to its editable Mermaid source.
+
+| Workflow | Sequence |
+| --- | --- |
+| **[Choose an environment](docs/ARCHITECTURE/steps/01-environment/)**<br>The dashboard checks API health in the background while the local portfolio is available.<br>[Mermaid source](docs/ARCHITECTURE/steps/01-environment/SEQUENCE.txt) | <a href="docs/ARCHITECTURE/steps/01-environment/diagram.png"><img src="docs/ARCHITECTURE/steps/01-environment/diagram.png" width="380" alt="Local preference and API availability determine the active environment." /></a> |
+| **[Record local work](docs/ARCHITECTURE/steps/02-local-work/)**<br>Request missing evidence for Drift and save an intervention for Cove. Only the intervention uses a slot.<br>[Mermaid source](docs/ARCHITECTURE/steps/02-local-work/SEQUENCE.txt) | <a href="docs/ARCHITECTURE/steps/02-local-work/diagram.png"><img src="docs/ARCHITECTURE/steps/02-local-work/diagram.png" width="380" alt="A local information request and plan are committed in IndexedDB and reflected across tabs." /></a> |
+| **[Save a shared plan](docs/ARCHITECTURE/steps/03-shared-write/)**<br>One browser submits the command. Both reviewers receive the committed plan from Firestore.<br>[Mermaid source](docs/ARCHITECTURE/steps/03-shared-write/SEQUENCE.txt) | <a href="docs/ARCHITECTURE/steps/03-shared-write/diagram.png"><img src="docs/ARCHITECTURE/steps/03-shared-write/diagram.png" width="380" alt="The API validates a shared plan and Firestore streams the result to both reviewers." /></a> |
+| **[Claim the final weekly slot](docs/ARCHITECTURE/steps/04-last-slot/)**<br>With one active plan, two reviewers submit different accounts. Only one can take the remaining slot.<br>[Mermaid source](docs/ARCHITECTURE/steps/04-last-slot/SEQUENCE.txt) | <a href="docs/ARCHITECTURE/steps/04-last-slot/diagram.png"><img src="docs/ARCHITECTURE/steps/04-last-slot/diagram.png" width="380" alt="Two simultaneous interventions compete for the final slot and one receives a conflict." /></a> |
+| **[Reset the shared portfolio](docs/ARCHITECTURE/steps/05-shared-reset/)**<br>One confirmation restores all six accounts for everyone in Shared API mode. A second reset within 60 seconds returns a retry delay.<br>[Mermaid source](docs/ARCHITECTURE/steps/05-shared-reset/SEQUENCE.txt) | <a href="docs/ARCHITECTURE/steps/05-shared-reset/diagram.png"><img src="docs/ARCHITECTURE/steps/05-shared-reset/diagram.png" width="380" alt="The API checks reset limits and restores the shared board in a Firestore transaction." /></a> |
 
 ## Starting portfolio
 
@@ -56,6 +80,20 @@ Start in a fresh browser profile and skip or finish the quick tour.
 **Reset workbench** restores the starting portfolio in the selected environment. In API mode it clears everyone’s plans, questions and owner updates after confirmation. The Local portfolio stays separate when switching modes or falling back to Local. The shared demo is public and intended for fictional data.
 
 **Proposed success metric** — Share of accounts renewing within 30 days with a plan saved before renewal that cites a signal, names an owner, and schedules follow-up by renewal. The starting denominator is Beacon, Cove, Drift, and Ember. The dashboard measures planning coverage. Measuring renewal impact would require outcome data and a comparison.
+
+## Monthly costs
+
+The planning model estimates monthly spend in USD by number of active reviewers. Choose a hosting row for the total. The Pages or Hobby scenario assumes eligibility for the free hosting tier, and the Pro scenario includes one paid seat. [Cost breakdown and assumptions](docs/COST/README.md)
+
+| Estimated monthly cost (USD)     |      1 |    100 |  1,000 | 10,000 | 100,000 |
+| -------------------------------- | -----: | -----: | -----: | -----: | ------: |
+| Google Cloud Run · Go API        |  $0.00 |  $0.00 |  $0.00 |  $0.48 |  $48.48 |
+| Firestore · storage and transfer |  $0.00 |  $0.00 |  $0.00 |  $1.14 |  $22.24 |
+| Firestore · document operations  |  $0.00 |  $0.00 |  $0.00 |  $1.26 |  $21.53 |
+| GitHub Pages or Vercel Hobby     |  $0.00 |  $0.00 |  $0.00 |  $0.00 |   $0.00 |
+| Vercel Pro · alternative host    | $20.00 | $20.00 | $20.00 | $20.00 |  $20.00 |
+| **Total · with Pages or Hobby**  |  $0.00 |  $0.00 |  $0.00 |  $2.88 |  $92.25 |
+| **Total · with Vercel Pro**      | $20.00 | $20.00 | $20.00 | $22.88 | $112.25 |
 
 ## Verification and attribution
 

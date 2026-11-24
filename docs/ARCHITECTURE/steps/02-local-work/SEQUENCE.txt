@@ -1,0 +1,52 @@
+---
+title: 02 · Review evidence and record local work
+config:
+  theme: base
+  fontFamily: Arial, sans-serif
+  themeCSS: |
+    rect.actor[name="U"] { fill: #146d64 !important; stroke: #146d64 !important; }
+    rect.actor[name="B"] { fill: #136b81 !important; stroke: #136b81 !important; }
+    rect.actor[name="D"] { fill: #725191 !important; stroke: #725191 !important; }
+    rect.actor[name="T"] { fill: #286368 !important; stroke: #286368 !important; }
+    text.actor, text.actor tspan { fill: #ffffff !important; font-weight: bold; }
+    .sequenceTitle, .titleText { font-weight: bold; }
+  themeVariables:
+    background: "#ffffff"
+    actorBkg: "#365b9b"
+    actorTextColor: "#ffffff"
+    actorLineColor: "#9aaaba"
+    signalColor: "#33465b"
+    signalTextColor: "#223447"
+    labelBoxBkgColor: "#edf2f8"
+    labelBoxBorderColor: "#8395a9"
+    labelTextColor: "#243954"
+    noteBkgColor: "#f4f7fb"
+    noteBorderColor: "#bdcbd9"
+    noteTextColor: "#35485c"
+    loopTextColor: "#33465b"
+  sequence:
+    mirrorActors: false
+    wrap: true
+    width: 165
+    height: 46
+    actorMargin: 55
+    messageMargin: 32
+    noteMargin: 12
+---
+sequenceDiagram
+    autonumber
+    participant U as Reviewer
+    create participant B as Dashboard
+    U->>B: Inspect Drift’s evidence
+    B-->>U: Usage report failed · adoption is unknown
+    U->>B: Request a corrected usage report
+    create participant D as IndexedDB
+    B->>D: Save the question<br/>in a transaction
+    D-->>B: Request saved · zero slots used
+    create participant T as Another tab
+    B-->>T: Notify other tabs of the change
+    U->>B: Open Cove and plan a support follow-up
+    B->>D: Check owner, date, revision and available slots
+    D-->>B: Plan saved with the original evidence
+    B-->>T: Notify other tabs to reload account work
+    Note over B,D: Completing the plan releases its slot. Resolving the issue preserves the original evidence.
