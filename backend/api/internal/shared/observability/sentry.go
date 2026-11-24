@@ -59,20 +59,24 @@ func (r Reporter) HTTP(next http.Handler) http.Handler {
 
 // FirestoreCheck runs at refresh time, including in the health worker goroutine.
 // Cached 503 responses share the original failure report.
-func (r Reporter) FirestoreCheck(check func(context.Context) error) func(context.Context) error {
-	return func(ctx context.Context) (err error) {
+func (r Reporter) FirestoreCheck(check func(context.Context) error) func(context.Context) (time.Duration, error) {
+	return func(ctx context.Context) (elapsed time.Duration, err error) {
+		start := time.Now()
 		defer func() {
 			if value := recover(); value != nil {
+				elapsed = time.Since(start)
 				err = errors.New("Firestore health check panicked")
 				r.hub.Recover(err)
 			}
 		}()
 		err = check(ctx)
+		// Stop the probe timer before synchronous event delivery.
+		elapsed = time.Since(start)
 		if err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, firestore.ErrNotConfigured) {
 			hub := r.hub.Clone()
 			hub.Scope().SetTag("grpc.code", status.Code(err).String())
 			hub.CaptureException(errors.New("Firestore metadata lookup failed"))
 		}
-		return err
+		return elapsed, err
 	}
 }

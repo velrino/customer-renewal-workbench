@@ -16,7 +16,7 @@ import (
 )
 
 type Handler struct {
-	check      func(context.Context) error
+	check      func(context.Context) (time.Duration, error)
 	appEnv     string
 	startedAt  time.Time
 	now        func() time.Time
@@ -25,7 +25,7 @@ type Handler struct {
 	refreshing chan struct{}
 }
 
-func New(appEnv string, check func(context.Context) error) *Handler {
+func New(appEnv string, check func(context.Context) (time.Duration, error)) *Handler {
 	return &Handler{check: check, appEnv: appEnv, startedAt: time.Now().UTC(), now: time.Now}
 }
 
@@ -99,9 +99,8 @@ func (handler *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (handler *Handler) runChecks() *checkSnapshot {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	start := time.Now()
-	err := handler.check(ctx)
-	elapsed := time.Since(start).Milliseconds()
+	duration, err := handler.check(ctx)
+	elapsed := duration.Milliseconds()
 	result := ServiceCheckResponse{Status: "up", ResponseTime: elapsed}
 	overall, code, ttl := "ok", http.StatusOK, time.Minute
 	if err != nil {

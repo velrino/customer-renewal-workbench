@@ -3,18 +3,22 @@ package observability_test
 import (
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"renewal-api/internal/app"
+	health "renewal-api/internal/modules/health-check"
 	"renewal-api/internal/shared/observability"
 )
 
 func TestErrorDelivery(t *testing.T) {
+	const deliveryDelay = 50 * time.Millisecond
 	events := make(chan string, 8)
 	ingest := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var body io.Reader = r.Body
@@ -32,6 +36,7 @@ func TestErrorDelivery(t *testing.T) {
 			t.Error(err)
 			return
 		}
+		time.Sleep(deliveryDelay)
 		events <- string(raw)
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -40,11 +45,26 @@ func TestErrorDelivery(t *testing.T) {
 	reporter := observability.New(dsn, "test", "test-revision")
 	check := reporter.FirestoreCheck(func(context.Context) error { return errors.New("private-diagnostic") })
 	routes := reporter.HTTP(app.Routes("test", check))
-	for range 2 {
+	var lookupTime int64
+	for i := range 2 {
 		w := httptest.NewRecorder()
 		routes.ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
 		if w.Code != 503 {
 			t.Fatal(w.Code)
+		}
+		var response health.HealthCheckResponse
+		if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+			t.Fatal(err)
+		}
+		elapsed := response.Checks["firestore"].ResponseTime
+		if i == 0 {
+			lookupTime = elapsed
+			if response.ResultTime.Total-elapsed < deliveryDelay.Milliseconds()-1 {
+				t.Fatalf("delivery time counted as Firestore time: %+v", response.ResultTime)
+			}
+		}
+		if elapsed != lookupTime || response.ResultTime.Average != lookupTime {
+			t.Fatalf("inconsistent cached lookup duration: %+v", response)
 		}
 	}
 	assertEvent := func(message string) {
@@ -79,7 +99,7 @@ func TestErrorDelivery(t *testing.T) {
 	}
 	assertEvent("HTTP handler panicked")
 
-	err := reporter.FirestoreCheck(func(context.Context) error { panic("private-background") })(context.Background())
+	_, err := reporter.FirestoreCheck(func(context.Context) error { panic("private-background") })(context.Background())
 	if err == nil {
 		t.Fatal("expected a failed probe")
 	}

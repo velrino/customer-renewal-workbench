@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	health "renewal-api/internal/modules/health-check"
@@ -24,21 +25,31 @@ func TestHealth(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var calls atomic.Int32
-			handler := Routes("test", func(ctx context.Context) error {
-				calls.Add(1)
-				if _, ok := ctx.Deadline(); !ok {
-					t.Error("missing probe deadline")
-				}
-				return tc.err
-			})
 			results := make(chan *httptest.ResponseRecorder, 4)
-			for range 4 {
-				go func() {
-					w := httptest.NewRecorder()
-					handler.ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
-					results <- w
-				}()
-			}
+			synctest.Test(t, func(t *testing.T) {
+				release := make(chan struct{})
+				handler := Routes("test", func(ctx context.Context) (time.Duration, error) {
+					calls.Add(1)
+					if _, ok := ctx.Deadline(); !ok {
+						t.Error("missing probe deadline")
+					}
+					<-release
+					return 10 * time.Millisecond, tc.err
+				})
+				for range 4 {
+					go func() {
+						w := httptest.NewRecorder()
+						handler.ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
+						results <- w
+					}()
+				}
+				synctest.Wait()
+				activeCalls := calls.Load()
+				close(release)
+				if activeCalls != 1 {
+					t.Fatalf("expected one in-flight probe for four pending requests, got %d", activeCalls)
+				}
+			})
 			misses := 0
 			for range 4 {
 				w := <-results

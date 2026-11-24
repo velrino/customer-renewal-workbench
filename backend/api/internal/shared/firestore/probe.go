@@ -24,18 +24,27 @@ func (p *Probe) Check(ctx context.Context) error {
 	if p.Project == "" || p.Database == "" {
 		return ErrNotConfigured
 	}
-	p.mu.Lock()
-	if p.client == nil {
-		client, err := admin.NewFirestoreAdminClient(ctx)
-		if err != nil {
-			p.mu.Unlock()
-			return err
-		}
-		p.client = client
+	client, err := p.databaseClient(func() (*admin.FirestoreAdminClient, error) {
+		return admin.NewFirestoreAdminClient(ctx)
+	})
+	if err != nil {
+		return err
 	}
-	client := p.client
-	p.mu.Unlock()
 	name := fmt.Sprintf("projects/%s/databases/%s", p.Project, p.Database)
-	_, err := client.GetDatabase(ctx, &adminpb.GetDatabaseRequest{Name: name})
+	_, err = client.GetDatabase(ctx, &adminpb.GetDatabaseRequest{Name: name})
 	return err
+}
+
+func (p *Probe) databaseClient(open func() (*admin.FirestoreAdminClient, error)) (*admin.FirestoreAdminClient, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.client != nil {
+		return p.client, nil
+	}
+	client, err := open()
+	if err != nil {
+		return nil, err
+	}
+	p.client = client
+	return client, nil
 }

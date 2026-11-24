@@ -23,3 +23,25 @@ jobs:
           go vet ./...
           go test -race ./...
           go build -o "$RUNNER_TEMP/renewal-api" ./cmd/api
+      - name: Verify build inputs
+        working-directory: backend/api
+        run: |
+          context=$(mktemp -d)
+          git -C ../.. archive HEAD:backend/api | tar -x -C "$context"
+          git ls-files -- Dockerfile go.mod go.sum 'cmd/*.go' 'internal/*.go' \
+            docs/docs.go docs/scalar.html docs/openapi.json | sort > "$RUNNER_TEMP/expected-inputs"
+
+          cd "$context"
+          touch cmd/api/local-settings.json internal/shared/notes.txt docs/local-config.json
+          gcloud meta list-files-for-upload | sort > "$RUNNER_TEMP/cloud-inputs"
+          diff -u "$RUNNER_TEMP/expected-inputs" "$RUNNER_TEMP/cloud-inputs"
+
+          docker build -f - --output "type=local,dest=$RUNNER_TEMP/docker-inputs" . <<'DOCKERFILE'
+          FROM scratch
+          COPY . /
+          DOCKERFILE
+          (cd "$RUNNER_TEMP/docker-inputs" && find . -type f -printf '%P\n' | sort) > "$RUNNER_TEMP/docker-files"
+          diff -u "$RUNNER_TEMP/expected-inputs" "$RUNNER_TEMP/docker-files"
+      - name: Build API image
+        working-directory: backend/api
+        run: docker build .
