@@ -30,7 +30,7 @@ func main() {
 		check = store.CheckDocument
 	}
 	routes := app.Routes(environment, reporter.FirestoreCheck(check))
-	renewals.Register(routes, store.Update)
+	renewals.Register(routes, store.Read, store.Update)
 	server := http.Server{
 		Addr:              ":" + setting("PORT", "8080"),
 		Handler:           reporter.HTTP(routes),

@@ -10,7 +10,7 @@ import (
 
 func TestMalformedWriteNeverReachesStore(t *testing.T) {
 	mux := http.NewServeMux()
-	Register(mux, func(context.Context, func(*Board) error) error {
+	Register(mux, nil, func(context.Context, func(*Board) error) error {
 		t.Fatal("unexpected write")
 		return nil
 	})
@@ -38,7 +38,7 @@ func TestMalformedWriteNeverReachesStore(t *testing.T) {
 func TestResetWithoutBodyUsesCurrentBoard(t *testing.T) {
 	board := Board{Version: 7, Changes: map[string]Account{"drift": {Information: "Pending question", Revision: 7}}}
 	mux := http.NewServeMux()
-	Register(mux, func(_ context.Context, mutate func(*Board) error) error { return mutate(&board) })
+	Register(mux, nil, func(_ context.Context, mutate func(*Board) error) error { return mutate(&board) })
 	out := httptest.NewRecorder()
 	mux.ServeHTTP(out, httptest.NewRequest(http.MethodPost, "/workbench/reset", nil))
 	if out.Code != http.StatusNoContent || board.Version != 8 || board.Changes["drift"].Information != "" || len(board.Changes) != 6 {
@@ -49,7 +49,7 @@ func TestResetWithoutBodyUsesCurrentBoard(t *testing.T) {
 func TestResetQuotaDoesNotBlockCommandsOrPreflight(t *testing.T) {
 	mux := http.NewServeMux()
 	calls := 0
-	Register(mux, func(context.Context, func(*Board) error) error { calls++; return nil })
+	Register(mux, nil, func(context.Context, func(*Board) error) error { calls++; return nil })
 	reset := "/workbench/reset"
 	for i := range 4 {
 		out := httptest.NewRecorder()
@@ -76,7 +76,7 @@ func TestResetCooldownAcrossHandlers(t *testing.T) {
 	board := Board{Changes: make(map[string]Account)}
 	for _, want := range []int{204, 429} {
 		mux := http.NewServeMux()
-		Register(mux, func(_ context.Context, mutate func(*Board) error) error { return mutate(&board) })
+		Register(mux, nil, func(_ context.Context, mutate func(*Board) error) error { return mutate(&board) })
 		out := httptest.NewRecorder()
 		mux.ServeHTTP(out, httptest.NewRequest("POST", "/workbench/reset", nil))
 		if out.Code != want || board.Version != 1 || (want == 429 && !strings.Contains(out.Body.String(), "rateLimited")) {

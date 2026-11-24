@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Customer Renewal Workbench API",
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   "tags": [
     {
@@ -11,7 +11,7 @@
     },
     {
       "name": "Renewals",
-      "description": "Account updates and reset operations for the shared renewal workbench."
+      "description": "Shared renewal accounts, account updates and reset operations."
     }
   ],
   "paths": {
@@ -40,6 +40,91 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workbench/accounts": {
+      "get": {
+        "tags": [
+          "Renewals"
+        ],
+        "operationId": "listRenewals",
+        "summary": "List shared renewals",
+        "description": "Lists the six sample accounts in ascending order of days until renewal, including untouched accounts and current shared edits. A page beyond the end returns an empty items array. The read quota refills at 60 requests per minute per network peer and 240 per instance, independently of writes.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "One-based page number.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647,
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "Maximum number of renewals on one page.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 3
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of renewal accounts and pagination totals.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenewalPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or repeated pagination parameter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Read quota exhausted. Retry after the indicated number of seconds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until another attempt is allowed.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The rate limiter or shared board is unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteError"
                 }
               }
             }
@@ -540,6 +625,121 @@
           }
         },
         "additionalProperties": false
+      },
+      "SavedPlan": {
+        "type": "object",
+        "required": [
+          "status",
+          "action",
+          "owner",
+          "followUp",
+          "evidence",
+          "savedAt"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "completed"
+            ]
+          },
+          "action": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "followUp": {
+            "type": "string",
+            "format": "date"
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "savedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RenewalItem": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "value",
+          "days",
+          "revision"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Annual contract value in USD."
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Days until renewal in the demo portfolio."
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0,
+            "format": "int64"
+          },
+          "issueResolved": {
+            "type": "boolean",
+            "default": false
+          },
+          "plan": {
+            "$ref": "#/components/schemas/SavedPlan"
+          },
+          "information": {
+            "type": "string"
+          }
+        }
+      },
+      "RenewalPage": {
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "pageSize",
+          "total",
+          "totalPages"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RenewalItem"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalPages": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
       }
     },
     "responses": {

@@ -45,6 +45,31 @@ func (s *Store) CheckDocument(ctx context.Context) error {
 	return err
 }
 
+func decodeBoard(snap *firestore.DocumentSnapshot, err error) (Board, error) {
+	board := Board{Changes: map[string]Account{}}
+	if status.Code(err) == codes.NotFound {
+		return board, nil
+	}
+	if err != nil {
+		return Board{}, err
+	}
+	if err := snap.DataTo(&board); err != nil {
+		return Board{}, err
+	}
+	if board.Changes == nil {
+		return Board{}, errors.New("invalid workbench document")
+	}
+	return board, nil
+}
+
+func (s *Store) Read(ctx context.Context) (Board, error) {
+	ref, err := s.document(ctx)
+	if err != nil {
+		return Board{}, err
+	}
+	return decodeBoard(ref.Get(ctx))
+}
+
 func (s *Store) Update(ctx context.Context, update func(*Board) error) error {
 	ref, err := s.document(ctx)
 	if err != nil {
@@ -52,16 +77,9 @@ func (s *Store) Update(ctx context.Context, update func(*Board) error) error {
 	}
 	return s.client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
 		snap, err := tx.Get(ref)
-		board := Board{Changes: map[string]Account{}}
-		if err == nil {
-			if err := snap.DataTo(&board); err != nil {
-				return err
-			}
-		} else if status.Code(err) != codes.NotFound {
+		board, err := decodeBoard(snap, err)
+		if err != nil {
 			return err
-		}
-		if board.Changes == nil {
-			return errors.New("invalid workbench document")
 		}
 		if err := update(&board); err != nil {
 			return err

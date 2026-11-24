@@ -7,23 +7,20 @@ import (
 	"unicode/utf8"
 )
 
-// The fixed portfolio matches the six sample accounts in the dashboard.
-var renewalDays = map[string]int{"ember": 7, "beacon": 14, "cove": 21, "drift": 30, "atlas": 45, "field": 60}
-
 type Plan struct {
-	Status   string `firestore:"status"`
-	Action   string `firestore:"action"`
-	Owner    string `firestore:"owner"`
-	FollowUp string `firestore:"followUp"`
-	Evidence string `firestore:"evidence"`
-	SavedAt  string `firestore:"savedAt"`
+	Status   string `firestore:"status" json:"status"`
+	Action   string `firestore:"action" json:"action"`
+	Owner    string `firestore:"owner" json:"owner"`
+	FollowUp string `firestore:"followUp" json:"followUp"`
+	Evidence string `firestore:"evidence" json:"evidence"`
+	SavedAt  string `firestore:"savedAt" json:"savedAt"`
 }
 type Account struct {
-	ID            string `firestore:"id"`
-	Revision      int64  `firestore:"revision"`
-	IssueResolved bool   `firestore:"issueResolved,omitempty"`
-	Plan          *Plan  `firestore:"plan,omitempty"`
-	Information   string `firestore:"information,omitempty"`
+	ID            string `firestore:"id" json:"id"`
+	Revision      int64  `firestore:"revision" json:"revision"`
+	IssueResolved bool   `firestore:"issueResolved,omitempty" json:"issueResolved,omitempty"`
+	Plan          *Plan  `firestore:"plan,omitempty" json:"plan,omitempty"`
+	Information   string `firestore:"information,omitempty" json:"information,omitempty"`
 }
 type Board struct {
 	LastResetAt time.Time          `firestore:"lastResetAt,omitempty"`
@@ -48,7 +45,7 @@ func (f failure) Error() string { return f.reason }
 var changed = failure{http.StatusConflict, "changed"}
 
 func (b *Board) apply(id string, revision int64, cmd Command, now time.Time) error {
-	days, known := renewalDays[id]
+	days, known := daysUntilRenewal(id)
 	if !known {
 		return failure{404, "unknownAccount"}
 	}
@@ -129,9 +126,9 @@ func (b *Board) reset(now time.Time) error {
 	b.LastResetAt = now
 	b.Version++
 	// Revisions survive reset so an old form cannot resurrect a cleared plan.
-	b.Changes = make(map[string]Account, len(renewalDays))
-	for id := range renewalDays {
-		b.Changes[id] = Account{ID: id, Revision: b.Version}
+	b.Changes = make(map[string]Account, len(portfolio))
+	for _, account := range portfolio {
+		b.Changes[account.id] = Account{ID: account.id, Revision: b.Version}
 	}
 	return nil
 }
