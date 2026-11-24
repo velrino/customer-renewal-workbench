@@ -1,7 +1,8 @@
 export interface ApiRequest {
-  method: 'GET'
-  path: '/'
+  method: 'GET' | 'POST'
+  path: '/' | '/workbench/reset' | `/workbench/accounts/${string}/commands`
   signal: AbortSignal
+  body?: unknown
 }
 
 export interface ApiHealth {

@@ -1,6 +1,6 @@
 # Customer Renewal Workbench Web
 
-**TL;DR** — A Next.js App Router dashboard for reviewing six sample accounts, deciding which renewals need attention, and assigning follow-ups within a two-slot weekly limit. The app runs in the browser without backend setup. IndexedDB stores account work, and local storage keeps UI preferences.
+**TL;DR** — A Next.js App Router dashboard for reviewing six sample accounts, deciding which renewals need attention, and assigning follow-ups within a two-slot weekly limit. The app runs in the browser without backend setup. Local mode stores work in IndexedDB. In API mode, Firestore streams the shared portfolio and the Go API handles every write. Local storage keeps UI preferences.
 
 ## Run locally
 
@@ -22,6 +22,7 @@ The dashboard checks the API on port 8080 on loopback and uses the hosted Cloud 
 | [`src/app/`](src/app/) | Next.js routes, the root layout, global styles, and app-wide providers. `page.tsx` renders the dashboard at `/`. |
 | [`src/modules/admin/`](src/modules/admin/) | The workbench shell and dashboard UI. `layout/` holds navigation and reset controls. `features/dashboard/` holds the renewal overview, timeline, account queue, and account decisions. |
 | [`src/shared/renewals/`](src/shared/renewals/) | Sample accounts in `accounts/`, attention and capacity rules with their tests in `workflow/`, and React hooks that connect the dashboard to the workflow and persistence in `hooks/`. |
+| [`src/shared/api/`](src/shared/api/) | Environment selection, background health checks and HTTP commands for the shared workbench. |
 | [`src/shared/storage/`](src/shared/storage/) | IndexedDB for saved account work and local storage for UI preferences. |
 | [`src/shared/ui/`](src/shared/ui/) | Reusable components such as dialogs, date pickers, buttons, and toasts. |
 | [`src/shared/hooks/`](src/shared/hooks/) | General-purpose hooks for mobile layouts and reduced motion. |

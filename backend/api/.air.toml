@@ -1,0 +1,11 @@
+root = "."
+tmp_dir = "target"
+
+[build]
+cmd = "go build -o ./target/api ./cmd/api"
+entrypoint = ["./target/api"]
+include_ext = ["go", "html", "json", "mod", "sum"]
+include_dir = ["cmd", "docs", "internal"]
+include_file = ["go.mod", "go.sum"]
+exclude_dir = ["target"]
+delay = 200

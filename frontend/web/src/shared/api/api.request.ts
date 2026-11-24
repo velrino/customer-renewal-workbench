@@ -1,3 +1,4 @@
+import type { Command } from '@/shared/renewals/workflow'
 import type { ApiHealth } from './api.interface'
 import { ApiResources } from './api.resources.ts'
 
@@ -6,6 +7,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export const API = {
+  workbench: {
+    save(id: string, revision: number, command: Command) {
+      return ApiResources.request({
+        method: 'POST', path: `/workbench/accounts/${encodeURIComponent(id)}/commands`,
+        signal: AbortSignal.timeout(10_000),
+        body: { revision, command, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+      })
+    },
+    reset() {
+      return ApiResources.request({
+        method: 'POST', path: '/workbench/reset', signal: AbortSignal.timeout(10_000),
+      })
+    },
+  },
   health: {
     async read(signal: AbortSignal): Promise<ApiHealth> {
       const body = await ApiResources.request({ method: 'GET', path: '/', signal })

@@ -5,7 +5,7 @@ description: Verify a renewal workbench change against its evidence, two-slot ca
 
 # Verify the renewal workflow
 
-Follow the [reviewer walkthrough](../../../README.md#reviewer-walkthrough-and-acceptance-checks) in a fresh synthetic demo session. Keep that session across reloads. When checking session isolation, open an independent browser context and verify that a saved intervention from the first session stays private.
+Follow the [reviewer walkthrough](../../../README.md#reviewer-walkthrough) in a fresh synthetic demo session. Keep that session across reloads. Use two independent browser contexts. In Local mode, verify that saved work stays private to each browser. In API mode, verify that both see the same changes without reloading and that a confirmed reset restores the sample portfolio in both. Use the Firestore emulator for shared reset checks.
 
 For each step, record the expected outcome, observed outcome, and evidence. Identify the environment (public deployment or local build) and the version or URL tested. For simultaneous saves, record both responses and the final persisted count.
 

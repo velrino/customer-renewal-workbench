@@ -124,12 +124,16 @@ export type Failure =
   | 'questionRequired'
   | 'full'
   | 'changed'
+  | 'rateLimited'
   | 'storage'
 export class WorkflowError extends Error {
   readonly reason: Failure
-  constructor(reason: Failure) {
+  readonly retryAfterSeconds?: number
+
+  constructor(reason: Failure, retryAfterSeconds?: number) {
     super(reason)
     this.reason = reason
+    this.retryAfterSeconds = retryAfterSeconds
   }
 }
 
@@ -159,13 +163,14 @@ export function applyCommand(
         committed(changes).length >= capacity
       )
         throw new WorkflowError('full')
+      const active = previous?.plan?.status === 'active' ? previous.plan : undefined
       work.plan = {
         status: 'active',
         action: command.action,
         owner: command.owner.trim(),
         followUp: command.followUp,
-        evidence: evidenceKey(a, previous),
-        savedAt: new Date().toISOString(),
+        evidence: active?.evidence ?? evidenceKey(a, previous),
+        savedAt: active?.savedAt ?? new Date().toISOString(),
       }
       break
     }

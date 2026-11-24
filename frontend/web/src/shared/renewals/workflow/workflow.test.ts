@@ -125,3 +125,19 @@ test('a new intervention uses current evidence after an issue is resolved', () =
   assert.equal(suggestedAction(cove), 'resolveIssue')
   assert.equal(suggestedAction(cove, resolved), 'checkIn')
 })
+
+test('editing an active plan keeps its original evidence and timestamp until a new intervention starts', () => {
+  const saved = plan(cove)
+  const originalTime = '2026-01-01T00:00:00Z'
+  saved.plan!.savedAt = originalTime
+  const resolved = applyCommand({ cove: saved }, cove, saved.revision, { type: 'resolve' })
+  const command = { type: 'plan', action: 'checkIn', owner: 'New owner', followUp: renewalDate(1) } as const
+  const edited = applyCommand({ cove: resolved }, cove, resolved.revision, command)
+  assert.equal(edited.plan?.evidence, 'cove')
+  assert.equal(edited.plan?.savedAt, originalTime)
+  assert.equal(edited.plan?.owner, command.owner)
+  const completed = applyCommand({ cove: edited }, cove, edited.revision, { type: 'complete' })
+  const fresh = applyCommand({ cove: completed }, cove, completed.revision, command)
+  assert.equal(fresh.plan?.evidence, 'coveResolved')
+  assert.notEqual(fresh.plan?.savedAt, originalTime)
+})
