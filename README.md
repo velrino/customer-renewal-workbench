@@ -15,6 +15,8 @@
   - [Local and shared writes](#local-and-shared-writes)
 - [Run locally](#run-locally)
 - [Renewal flows](#renewal-flows)
+  - [Local mode](#local-mode)
+  - [Shared API mode](#shared-api-mode)
 - [Starting portfolio](#starting-portfolio)
 - [Decision rules](#decision-rules)
 - [Reviewer walkthrough](#reviewer-walkthrough)
@@ -55,20 +57,26 @@ Open the [local dashboard](http://127.0.0.1:3000/). The [frontend guide](fronten
 
 ## Renewal flows
 
-Select a preview to read the full sequence. Each diagram also links to its editable Mermaid source.
+### Local mode
 
-<p align="center">
-  <strong><a href="docs/ARCHITECTURE/steps/01-environment/">Choose an environment</a></strong><br>
-  The dashboard checks API health in the background while the local portfolio is available.<br>
-  <a href="docs/ARCHITECTURE/steps/01-environment/SEQUENCE.txt">Mermaid source</a><br><br>
-  <a href="docs/ARCHITECTURE/steps/01-environment/diagram.png"><img src="docs/ARCHITECTURE/steps/01-environment/diagram.png" width="720" alt="Local preference and API availability determine the active environment." /></a>
-</p>
+Choose **Local** under **User menu → Environment** to try the workflow in one browser profile. Request a usage report for Drift, save a plan for Cove, then refresh the dashboard. IndexedDB keeps both decisions available even when the API is down. A local reset clears the work saved in that profile.
 
 <p align="center">
   <strong><a href="docs/ARCHITECTURE/steps/02-local-work/">Record local work</a></strong><br>
   Request missing evidence for Drift and save an intervention for Cove. Only the intervention uses a slot.<br>
   <a href="docs/ARCHITECTURE/steps/02-local-work/SEQUENCE.txt">Mermaid source</a><br><br>
   <a href="docs/ARCHITECTURE/steps/02-local-work/diagram.png"><img src="docs/ARCHITECTURE/steps/02-local-work/diagram.png" width="720" alt="A local information request and plan are committed in IndexedDB and reflected across tabs." /></a>
+</p>
+
+### Shared API mode
+
+Once the health check succeeds, choose **Shared API** in two browser profiles. Save a plan in one and watch it appear in the other. The API validates the change and Firestore delivers the committed board to both browsers. The same shared board determines who gets the last slot and what everyone sees after a reset.
+
+<p align="center">
+  <strong><a href="docs/ARCHITECTURE/steps/01-environment/">Choose an environment</a></strong><br>
+  The dashboard checks API health in the background while the local portfolio is available.<br>
+  <a href="docs/ARCHITECTURE/steps/01-environment/SEQUENCE.txt">Mermaid source</a><br><br>
+  <a href="docs/ARCHITECTURE/steps/01-environment/diagram.png"><img src="docs/ARCHITECTURE/steps/01-environment/diagram.png" width="720" alt="Local preference and API availability determine the active environment." /></a>
 </p>
 
 <p align="center">
