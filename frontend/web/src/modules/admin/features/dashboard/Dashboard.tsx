@@ -331,7 +331,7 @@ export function Dashboard() {
           },
         })),
       )
-      toast(t('raceResult'), {
+      toast.message(t('raceResult'), {
         description: results
           .map((result) => {
             const name =
