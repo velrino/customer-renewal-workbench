@@ -36,3 +36,11 @@ export function subscribeToStorage(refresh: () => void) {
     window.removeEventListener('workbench-storage-change', refresh)
   }
 }
+
+export function clearWorkbenchPreferences() {
+  for (const key of Object.keys(localStorage)) {
+    if (key.startsWith(appPrefix + ':')) localStorage.removeItem(key)
+  }
+  unsaved.clear()
+  window.dispatchEvent(new Event('workbench-storage-change'))
+}

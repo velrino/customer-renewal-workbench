@@ -60,6 +60,15 @@ export function createRecordStore<T extends { id: string }>(
   }
 
   return {
+    async clear() {
+      const db = await open()
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readwrite')
+        tx.oncomplete = () => resolve()
+        tx.onabort = () => reject(tx.error)
+        tx.objectStore(storeName).clear()
+      })
+    },
     readAll: () => transact(),
     update: (derive: (current: Records) => T) => transact(derive),
   }
