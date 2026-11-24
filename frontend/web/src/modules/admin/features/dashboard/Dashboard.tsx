@@ -49,9 +49,10 @@ const statusStyles = {
   review: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200',
   investigate: 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200',
   monitor: 'bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-200',
+  reviewed: 'bg-green-700 text-white',
   steady: 'bg-muted text-muted-foreground',
 }
-const statuses = ['review', 'investigate', 'monitor', 'steady'] as const
+const statuses = ['review', 'investigate', 'monitor', 'reviewed', 'steady'] as const
 type QueueFilters = { query: string; filter: (typeof statuses)[number][] }
 const emptyFilters: QueueFilters = { query: '', filter: [] }
 const queuePreferenceKey = storageKey('tables', 'account-queue')

@@ -89,7 +89,7 @@ export function AccountDecision({
       setEditing(false)
       toast.success(t('confirmed.' + command.type), {
         description: command.type === 'complete' && status === 'review'
-          ? t('stillNeedsReview', { name: account.name, signal: t('signals.' + evidenceKey(account, work)) })
+          ? t('reviewCompleted', { name: account.name, signal: t('signals.' + evidenceKey(account, work)) })
           : undefined,
       })
     } catch (e) {
@@ -121,7 +121,9 @@ export function AccountDecision({
         <Tabs.Content value="overview" className="space-y-3">
           {children}
           <section className="rounded-md bg-muted p-3">
-            <strong>{t('states.' + status)}</strong>
+            <strong className={status === 'reviewed' ? 'inline-flex rounded-full bg-green-700 px-2 py-0.5 text-xs text-white' : undefined}>
+              {t('states.' + status)}
+            </strong>
             <h3 className="mt-2 font-semibold">{t('hypothesis')}</h3>
             <p>{t('hypotheses.' + evidenceKey(account, work))}</p>
           </section>

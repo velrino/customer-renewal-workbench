@@ -47,7 +47,7 @@ export function renewalDate(days: number, referenceDay = today()) {
   return date.toISOString().slice(0, 10)
 }
 
-export type Attention = 'review' | 'investigate' | 'monitor' | 'steady'
+export type Attention = 'review' | 'investigate' | 'monitor' | 'reviewed' | 'steady'
 
 export function attention(a: Account, work?: AccountWork): Attention {
   const decline =
@@ -59,7 +59,7 @@ export function attention(a: Account, work?: AccountWork): Attention {
     (a.budgetPending && a.days <= budgetHorizonDays) ||
     (decline && a.sponsor === 'unreachable')
   )
-    return 'review'
+    return work?.plan?.status === 'completed' ? 'reviewed' : 'review'
   if (a.adoption == null || a.sponsor === 'unknown') return 'investigate'
   if (work?.plan?.status === 'active') return 'monitor'
   return 'steady'
@@ -90,7 +90,7 @@ export function committed(changes: Changes) {
   return accounts.filter((a) => changes[a.id]?.plan?.status === 'active')
 }
 
-const attentionOrder = { review: 0, investigate: 1, monitor: 2, steady: 3 }
+const attentionOrder = { review: 0, investigate: 1, monitor: 2, reviewed: 3, steady: 4 }
 
 export function attentionPriority(a: Account, changes: Changes) {
   return attentionOrder[attention(a, changes[a.id])]

@@ -77,6 +77,17 @@ test('the third commitment is rejected and an edit of an existing plan succeeds'
   assert.equal(committed({ ...changes, ember: edited }).length, 2)
 })
 
+test('completing an intervention removes the account from review while preserving its concern', () => {
+  for (const account of [ember, beacon, cove]) {
+    const saved = plan(account)
+    assert.equal(attention(account, saved), 'review')
+    const completed = applyCommand({ [account.id]: saved }, account, saved.revision, { type: 'complete' })
+    assert.equal(attention(account, completed), 'reviewed')
+    assert.equal(completed.plan?.evidence, saved.plan?.evidence)
+    assert.equal(committed({ [account.id]: completed }).length, 0)
+  }
+})
+
 test('resolving Cove moves attention to monitoring and keeps the follow-up', () => {
   const saved = plan(cove)
   const resolved = applyCommand({ cove: saved }, cove, saved.revision, { type: 'resolve' })
