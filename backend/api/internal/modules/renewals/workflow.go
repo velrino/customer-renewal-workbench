@@ -112,10 +112,7 @@ func (b *Board) apply(id string, revision int64, cmd Command, now time.Time) err
 	return nil
 }
 
-func (b *Board) reset(version int64) error {
-	if version != b.Version {
-		return changed
-	}
+func (b *Board) reset() error {
 	b.Version++
 	// Revisions survive reset so an old form cannot resurrect a cleared plan.
 	b.Changes = make(map[string]Account, len(renewalDays))

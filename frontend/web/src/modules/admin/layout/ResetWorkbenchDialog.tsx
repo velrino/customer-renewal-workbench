@@ -11,7 +11,6 @@ const resetColor = 'bg-[#9e0812] text-white hover:bg-[#87070f]'
 export function ResetWorkbenchDialog({ onReset }: { onReset: () => Promise<void> }) {
   const t = useTranslations('nav')
   const { environment } = useEnvironment()
-  const resetAtOpen = useRef(onReset)
   const cancel = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -20,7 +19,7 @@ export function ResetWorkbenchDialog({ onReset }: { onReset: () => Promise<void>
     if (busy) return
     setBusy(true)
     try {
-      await resetAtOpen.current()
+      await onReset()
       setOpen(false)
     } catch {
       setOpen(false)
@@ -32,10 +31,7 @@ export function ResetWorkbenchDialog({ onReset }: { onReset: () => Promise<void>
 
   return (
     <Dialog open={open} onOpenChange={next => {
-      if (!busy) {
-        if (next) resetAtOpen.current = onReset
-        setOpen(next)
-      }
+      if (!busy) setOpen(next)
     }}>
       <DialogTrigger asChild>
         <Button className={resetColor + ' justify-between'}>{t('reset')}<RotateCcw aria-hidden /></Button>

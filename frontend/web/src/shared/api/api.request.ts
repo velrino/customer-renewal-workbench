@@ -15,9 +15,9 @@ export const API = {
         body: { revision, command, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
       })
     },
-    reset(version: number) {
+    reset() {
       return ApiResources.request({
-        method: 'POST', path: '/workbench/reset', signal: AbortSignal.timeout(10_000), body: { version },
+        method: 'POST', path: '/workbench/reset', signal: AbortSignal.timeout(10_000),
       })
     },
   },

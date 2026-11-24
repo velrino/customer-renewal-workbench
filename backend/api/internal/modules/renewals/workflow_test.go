@@ -32,10 +32,7 @@ func TestSharedPortfolio(t *testing.T) {
 	apply("beacon", plan, failure{409, "full"})
 	apply("ember", Command{Type: "complete"}, nil)
 	apply("beacon", plan, nil)
-	if err := board.reset(board.Version - 1); !errors.Is(err, changed) {
-		t.Fatalf("stale reset: %v", err)
-	}
-	if err := board.reset(board.Version); err != nil {
+	if err := board.reset(); err != nil {
 		t.Fatal(err)
 	}
 	for id := range renewalDays {

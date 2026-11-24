@@ -32,25 +32,21 @@ func writeHandler(update updateBoard, reset bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Cache-Control", "no-store")
-		media, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
-		if media != "application/json" {
-			respondError(w, failure{415, "invalidRequest"})
-			return
-		}
-		dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8192))
-		dec.DisallowUnknownFields()
-		decode := func(input any) bool { return dec.Decode(input) == nil && dec.Decode(new(any)) == io.EOF }
-		var mutate func(*Board) error
+		mutate := (*Board).reset
 		if reset {
-			var body struct {
-				Version *int64 `json:"version"`
-			}
-			if !decode(&body) || body.Version == nil || *body.Version < 0 {
+			if _, err := io.Copy(io.Discard, http.MaxBytesReader(w, r.Body, 0)); err != nil {
 				respondError(w, failure{400, "invalidRequest"})
 				return
 			}
-			mutate = func(b *Board) error { return b.reset(*body.Version) }
 		} else {
+			media, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
+			if media != "application/json" {
+				respondError(w, failure{415, "invalidRequest"})
+				return
+			}
+			dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8192))
+			dec.DisallowUnknownFields()
+			decode := func(input any) bool { return dec.Decode(input) == nil && dec.Decode(new(any)) == io.EOF }
 			var body struct {
 				Revision *int64  `json:"revision"`
 				TimeZone string  `json:"timeZone"`

@@ -157,43 +157,13 @@
         ],
         "operationId": "resetSharedWorkbench",
         "summary": "Reset the shared demo for everyone",
-        "description": "Send the board version from the latest snapshot. Clears plans, questions and owner actions for all six accounts in one transaction. Invalidates drafts opened before the reset.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Reset"
-              }
-            }
-          }
-        },
+        "description": "Restores the six sample accounts for everyone. The API clears saved plans, questions and owner actions in one Firestore transaction, including edits committed before the reset. Earlier drafts cannot overwrite the restored state. Send an empty POST.",
         "responses": {
           "204": {
             "description": "Committed. The Firestore document listener receives the resulting state."
           },
           "400": {
-            "description": "Invalid request or version",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WriteError"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Stale version",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/WriteError"
-                }
-              }
-            }
-          },
-          "415": {
-            "description": "Expected application/json",
+            "description": "The request body must be empty",
             "content": {
               "application/json": {
                 "schema": {
@@ -535,20 +505,6 @@
           },
           "command": {
             "$ref": "#/components/schemas/Command"
-          }
-        },
-        "additionalProperties": false
-      },
-      "Reset": {
-        "type": "object",
-        "required": [
-          "version"
-        ],
-        "properties": {
-          "version": {
-            "type": "integer",
-            "format": "int64",
-            "minimum": 0
           }
         },
         "additionalProperties": false

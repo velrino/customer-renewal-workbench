@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { API } from '@/shared/api/api.request'
 import { ApiError } from '@/shared/api/api.resources'
-import type { SharedBoard } from '../workflow/shared-board'
 import type { Account } from '../accounts'
-import { WorkflowError, type Command, type Failure } from '../workflow'
+import { WorkflowError, type Changes, type Command, type Failure } from '../workflow'
 import type { AccountCommand } from './useRenewalWork'
 
 function reason(error: unknown): Failure {
@@ -17,7 +16,7 @@ function reason(error: unknown): Failure {
 }
 
 export function useSharedRenewalWork() {
-  const [board, setBoard] = useState<SharedBoard>({ version: 0, changes: {} })
+  const [changes, setChanges] = useState<Changes>({})
   const [ready, setReady] = useState(false)
   const [readError, setReadError] = useState(false)
   const [attempt, retry] = useState(0)
@@ -33,7 +32,7 @@ export function useSharedRenewalWork() {
       if (!active) return
       unsubscribe = subscribeBoard((snapshot, cached) => {
         if (!active) return
-        setBoard(snapshot)
+        setChanges(snapshot)
         setReady(!cached)
         setReadError(cached)
       }, failed)
@@ -66,12 +65,12 @@ export function useSharedRenewalWork() {
 
   async function resetWork() {
     if (!ready) throw new WorkflowError('storage')
-    await API.workbench.reset(board.version)
+    await API.workbench.reset()
   }
 
   async function retryRead() {
     setReadError(false)
     retry(current => current + 1)
   }
-  return { changes: board.changes, ready, readError, save, saveTwo, resetWork, retryRead }
+  return { changes, ready, readError, save, saveTwo, resetWork, retryRead }
 }
