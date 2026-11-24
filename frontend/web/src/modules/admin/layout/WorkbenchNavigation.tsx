@@ -1,9 +1,12 @@
 'use client'
 
-import { BriefcaseBusiness, LayoutDashboard, List, X } from 'lucide-react'
+import { BriefcaseBusiness, ExternalLink, LayoutDashboard, UserRound, X } from 'lucide-react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
+import { SelectDropdown } from '@/shared/ui/select-dropdown'
 import { Button } from '@/shared/ui/button'
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/shared/ui/dialog'
+import { ResetWorkbenchDialog } from './ResetWorkbenchDialog'
 import { ThemeDialog } from '@/shared/ui/theme-dialog'
 import { Separator } from '@/shared/ui/separator'
 import {
@@ -19,13 +22,7 @@ import {
   useSidebar,
 } from '@/shared/ui/sidebar'
 
-export type DashboardView = 'dashboard' | 'accounts'
-const destinations = [
-  { id: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { id: 'accounts', href: '/dashboard/account-queue', icon: List },
-] as const
-
-export function Navigation({ view }: { view: DashboardView }) {
+export function Navigation() {
   const t = useTranslations('nav')
   const { setOpenMobile, isMobile } = useSidebar()
   return (
@@ -57,22 +54,14 @@ export function Navigation({ view }: { view: DashboardView }) {
           <SidebarGroup>
             <SidebarGroupLabel>{t('workspace')}</SidebarGroupLabel>
             <SidebarMenu>
-              {destinations.map(({ id, href, icon: Icon }) => (
-                <SidebarMenuItem key={id}>
-                  <SidebarMenuButton
-                    tooltip={t(id)}
-                    aria-label={t(id)}
-                    aria-current={view === id ? 'page' : undefined}
-                    isActive={view === id}
-                    asChild
-                  >
-                    <Link href={href} onClick={() => setOpenMobile(false)}>
-                      <Icon />
-                      <span>{t(id)}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip={t('dashboard')} aria-label={t('dashboard')} aria-current="page" isActive asChild>
+                  <Link href="/dashboard" onClick={() => setOpenMobile(false)}>
+                    <LayoutDashboard />
+                    <span>{t('dashboard')}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
         </nav>
@@ -81,16 +70,43 @@ export function Navigation({ view }: { view: DashboardView }) {
   )
 }
 
-export function Navbar({ view }: { view: DashboardView }) {
+export function Navbar({ onReset }: { onReset: () => Promise<void> }) {
   const t = useTranslations('nav')
   return (
     <header className="flex h-16 items-center gap-4 px-4">
       <SidebarTrigger variant="outline" />
       <Separator orientation="vertical" className="max-h-6" />
       <span className="text-sm font-medium">
-        {t(view === 'dashboard' ? 'overview' : 'accounts')}
+        {t('overview')}
       </span>
       <ThemeDialog />
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="secondary" size="icon" className="rounded-full" aria-label={t('userMenu')} title={t('userMenu')}>
+            <UserRound aria-hidden="true" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
+          <DialogTitle>{t('userMenu')}</DialogTitle>
+          <SelectDropdown
+            label={t('environment')}
+            description={t('environmentHint')}
+            defaultValue="local"
+            items={[
+              { value: 'local', label: t('local') },
+              { value: 'api', label: t('api'), disabled: true },
+            ]}
+          />
+          <Button variant="outline" className="justify-between" asChild>
+            <a href="https://github.com/velrino/customer-renewal-workbench" target="_blank" rel="noopener noreferrer">
+              {t('github')}
+              <span className="sr-only">{t('opensNewTab')}</span>
+              <ExternalLink aria-hidden="true" />
+            </a>
+          </Button>
+          <ResetWorkbenchDialog onReset={onReset} />
+        </DialogContent>
+      </Dialog>
     </header>
   )
 }

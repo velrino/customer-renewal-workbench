@@ -1,6 +1,13 @@
 import { accounts, type Account } from '../accounts/index.ts'
 
-export const sampleDay = '2026-11-23'
+export function today() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export const capacity = 2
 export const budgetHorizonDays = 14
 export const adoptionDropPoints = 30
@@ -34,8 +41,8 @@ export type Command =
   | { type: 'information'; question: string }
   | { type: 'resolve' | 'complete' }
 
-export function renewalDate(days: number) {
-  const date = new Date(sampleDay + 'T00:00:00Z')
+export function renewalDate(days: number, referenceDay = today()) {
+  const date = new Date(referenceDay + 'T00:00:00Z')
   date.setUTCDate(date.getUTCDate() + days)
   return date.toISOString().slice(0, 10)
 }
@@ -83,17 +90,22 @@ export function committed(changes: Changes) {
   return accounts.filter((a) => changes[a.id]?.plan?.status === 'active')
 }
 
+const attentionOrder = { review: 0, investigate: 1, monitor: 2, steady: 3 }
+
+export function attentionPriority(a: Account, changes: Changes) {
+  return attentionOrder[attention(a, changes[a.id])]
+}
+
 export function sortedQueue(changes: Changes) {
-  const order = { review: 0, investigate: 1, monitor: 2, steady: 3 }
   return [...accounts].sort(
     (a, b) =>
-      order[attention(a, changes[a.id])] - order[attention(b, changes[b.id])] ||
+      attentionPriority(a, changes) - attentionPriority(b, changes) ||
       a.days - b.days,
   )
 }
 
-export function planningCoverage(changes: Changes) {
-  const denominator = accounts.filter((a) => a.days <= renewalWindowDays)
+export function planningCoverage(changes: Changes, portfolio = accounts) {
+  const denominator = portfolio.filter((a) => a.days <= renewalWindowDays)
   const ready = denominator.filter((a) => {
     const plan = changes[a.id]?.plan
     return (
@@ -133,12 +145,13 @@ export function applyCommand(
   switch (command.type) {
     case 'plan': {
       if (!command.owner.trim()) throw new WorkflowError('ownerRequired')
+      const referenceDay = today()
       const date = new Date(command.followUp + 'T00:00:00Z')
       if (
         !Number.isFinite(date.getTime()) ||
         date.toISOString().slice(0, 10) !== command.followUp ||
-        command.followUp < sampleDay ||
-        command.followUp > renewalDate(a.days)
+        command.followUp < referenceDay ||
+        command.followUp > renewalDate(a.days, referenceDay)
       )
         throw new WorkflowError('invalidDate')
       if (

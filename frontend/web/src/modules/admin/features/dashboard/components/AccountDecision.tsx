@@ -1,6 +1,10 @@
-import { useState } from 'react'
+import { RelativeDate } from '@/shared/ui/relative-date'
+import { useId, useState } from 'react'
 import { useFormatter, useTranslations } from 'next-intl'
 import { toast } from '@/shared/ui/toast'
+import { SelectDropdown } from '@/shared/ui/select-dropdown'
+import { TextField } from '@/shared/ui/text-field'
+import { DatePicker } from '@/shared/ui/date-picker'
 import { Button } from '@/shared/ui/button'
 import type { Account } from '@/shared/renewals/accounts'
 import {
@@ -8,7 +12,7 @@ import {
   attention,
   evidenceKey,
   renewalDate,
-  sampleDay,
+  today,
   suggestedAction,
   WorkflowError,
   type AccountWork,
@@ -17,7 +21,6 @@ import {
   type Failure,
 } from '@/shared/renewals/workflow'
 
-const field = 'mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm'
 type Editor = {
   mode: 'plan' | 'information'
   revision: number
@@ -46,13 +49,25 @@ export function AccountDecision({
 }) {
   const t = useTranslations('dashboard')
   const fmt = useFormatter()
+  const ownerId = useId()
+  const questionId = useId()
+  const followUpId = useId()
   const [draft, setDraft] = useState<Editor | null>(null)
   const [error, setError] = useState<Failure | null>(null)
   const [busy, setBusy] = useState(false)
+  const [editing, setEditing] = useState(false)
   const plan = work?.plan
+  const referenceDay = today()
+  const renewal = renewalDate(account.days, referenceDay)
   const status = attention(account, work)
   function edit(mode: Editor['mode']) {
     const activePlan = plan?.status === 'active' ? plan : undefined
+    setEditing(true)
+    setError(null)
+    if (draft) {
+      setDraft({ ...draft, mode })
+      return
+    }
     setDraft({
       mode,
       revision: work?.revision ?? 0,
@@ -61,7 +76,6 @@ export function AccountDecision({
       action: activePlan?.action ?? suggestedAction(account, work),
       question: work?.information ?? '',
     })
-    setError(null)
   }
   async function submit(command: Command, revision: number) {
     setBusy(true)
@@ -69,52 +83,62 @@ export function AccountDecision({
     try {
       await save(account, revision, command)
       setDraft(null)
+      setEditing(false)
       toast.success(t('confirmed.' + command.type))
     } catch (e) {
-      setError(e instanceof WorkflowError ? e.reason : 'storage')
+      const reason = e instanceof WorkflowError ? e.reason : 'storage'
+      setError(reason)
+      toast.error(t('errors.' + reason), { id: 'account-decision-error' })
+      const invalidField = { ownerRequired: ownerId, questionRequired: questionId, invalidDate: followUpId }
+      if (reason === 'ownerRequired' || reason === 'questionRequired' || reason === 'invalidDate') {
+        document.getElementById(invalidField[reason])?.focus()
+      }
     } finally {
       setBusy(false)
     }
   }
   function dateLabel(value: string) {
-    return fmt.dateTime(new Date(value + 'T00:00:00Z'), { dateStyle: 'medium' })
+    return fmt.dateTime(new Date(value + 'T00:00:00Z'), { dateStyle: 'medium', timeZone: 'UTC' })
   }
   return (
     <div className="space-y-4 text-sm">
-      <section className="rounded-md bg-muted p-3">
-        <strong>{t('states.' + status)}</strong>
-        <h3 className="mt-2 font-semibold">{t('hypothesis')}</h3>
-        <p>{t('hypotheses.' + evidenceKey(account, work))}</p>
-        <p className="text-muted-foreground">{t('hypothesisNote')}</p>
-      </section>
-      {plan && (
-        <section className="space-y-1 rounded-md border p-3">
-          <h3 className="font-semibold">
-            {t(plan.status === 'active' ? 'agreedPlan' : 'completedPlan')}
-          </h3>
-          <p>
-            {t('actions.' + plan.action)} · {plan.owner} ·{' '}
-            {dateLabel(plan.followUp)}
-          </p>
+      <h3 aria-live="polite" className="font-semibold">
+        {t(editing ? (draft?.mode === 'information' ? 'ask' : 'planDetails') : 'evidenceReview')}
+      </h3>
+      {!editing && (
+        <>
+          <section className="rounded-md bg-muted p-3">
+            <strong>{t('states.' + status)}</strong>
+            <h3 className="mt-2 font-semibold">{t('hypothesis')}</h3>
+            <p>{t('hypotheses.' + evidenceKey(account, work))}</p>
+          </section>
+          {plan && (
+            <section className="space-y-1 rounded-md border p-3">
+              <h3 className="font-semibold">
+                {t(plan.status === 'active' ? 'agreedPlan' : 'completedPlan')}
+              </h3>
+              <p>
+                {t('actions.' + plan.action)} · {plan.owner} ·{' '}
+                <RelativeDate date={plan.followUp} referenceDay={referenceDay} showExact />
+              </p>
+              <p className="text-muted-foreground">
+                {t('basis')} · {t('signals.' + plan.evidence)}
+              </p>
+            </section>
+          )}
+          {work?.information && (
+            <p>
+              <strong>{t('infoTitle')}</strong> · {work.information}
+            </p>
+          )}
           <p className="text-muted-foreground">
-            {t('basis')} · {t('signals.' + plan.evidence)}
+            {t('used', { count: used })} ·{' '}
+            {t('sampleDate', { date: dateLabel(referenceDay) })}
           </p>
-        </section>
+        </>
       )}
-      {work?.information && (
-        <p>
-          <strong>{t('infoTitle')}</strong> · {work.information}
-        </p>
-      )}
-      <p className="text-muted-foreground">
-        {t('used', { count: used })} ·{' '}
-        {t('sampleDate', { date: dateLabel(sampleDay) })}
-      </p>
-      {!draft && (
+      {!editing && (
         <div className="flex flex-wrap gap-2">
-          <Button disabled={busy || !ready} onClick={() => edit('plan')}>
-            {t(plan?.status === 'active' ? 'editPlan' : 'newPlan')}
-          </Button>
           <Button
             variant="outline"
             disabled={busy || !ready}
@@ -122,9 +146,12 @@ export function AccountDecision({
           >
             {t('ask')}
           </Button>
+          <Button className="ms-auto" disabled={busy || !ready} onClick={() => edit('plan')}>
+            {t(plan?.status === 'active' ? 'editPlan' : 'newPlan')}
+          </Button>
         </div>
       )}
-      {draft && (
+      {editing && draft && (
         <form
           noValidate
           className="space-y-3 rounded-md border p-3"
@@ -143,114 +170,88 @@ export function AccountDecision({
             )
           }}
         >
-          {draft.mode === 'plan' ? (
+          {draft.mode === 'plan' && (
             <>
-              <label className="block">
-                {t('action')}
-                <select
-                  autoFocus
-                  className={field}
-                  value={draft.action}
-                  onChange={(e) =>
-                    setDraft({ ...draft, action: e.target.value as Action })
-                  }
-                >
-                  {actions.map((action) => (
-                    <option key={action} value={action}>
-                      {t('actions.' + action)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                {t('owner')}
-                <input
-                  className={field}
+              <SelectDropdown
+                label={t('action')}
+                autoFocus
+                value={draft.action}
+                onValueChange={action => setDraft({ ...draft, action: action as Action })}
+                items={actions.map(value => ({ value, label: t('actions.' + value) }))}
+              />
+              <div>
+                <label htmlFor={ownerId}>{t('owner')}</label>
+                <TextField
+                  id={ownerId}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  className="mt-1"
                   required
                   maxLength={80}
                   value={draft.owner}
                   aria-invalid={error === 'ownerRequired'}
-                  aria-describedby={
-                    error === 'ownerRequired' ? 'decision-error' : undefined
-                  }
-                  onChange={(e) =>
-                    setDraft({ ...draft, owner: e.target.value })
+
+                  onValueChange={owner =>
+                    setDraft({ ...draft, owner })
                   }
                 />
-              </label>
-              <label className="block">
-                {t('followUp')}
-                <input
-                  className={field}
-                  type="date"
-                  required
-                  min={sampleDay}
-                  max={renewalDate(account.days)}
-                  value={draft.followUp}
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor={followUpId}>{t('followUp')}</label>
+                <DatePicker
+                  id={followUpId}
+                  label={t('followUp')}
+                  placeholder={t('selectDate')}
+                  selected={draft.followUp ? new Date(draft.followUp) : undefined}
+                  min={new Date(referenceDay)}
+                  max={new Date(renewal)}
                   aria-invalid={error === 'invalidDate'}
-                  aria-describedby={
-                    error === 'invalidDate' ? 'decision-error' : undefined
-                  }
-                  onChange={(e) =>
-                    setDraft({ ...draft, followUp: e.target.value })
-                  }
+
+                  onSelect={date => setDraft({ ...draft, followUp: date?.toISOString().slice(0, 10) ?? '' })}
                 />
-              </label>
+              </div>
               <p className="text-xs text-muted-foreground">
                 {t('dateRange', {
-                  start: dateLabel(sampleDay),
-                  end: dateLabel(renewalDate(account.days)),
+                  start: dateLabel(referenceDay),
+                  end: dateLabel(renewal),
                 })}
               </p>
             </>
-          ) : (
-            <label className="block">
-              {t('question')}
-              <textarea
+          )}
+          {draft.mode === 'information' && (
+            <div>
+              <label htmlFor={questionId}>{t('question')}</label>
+              <TextField
+                id={questionId}
+                type="textarea"
                 autoFocus
-                className={field}
+                className="mt-1"
                 required
                 maxLength={400}
                 value={draft.question}
                 aria-invalid={error === 'questionRequired'}
-                aria-describedby={
-                  error === 'questionRequired' ? 'decision-error' : undefined
-                }
-                onChange={(e) =>
-                  setDraft({ ...draft, question: e.target.value })
+
+                onValueChange={question =>
+                  setDraft({ ...draft, question })
                 }
               />
-            </label>
+            </div>
           )}
-          <div className="flex gap-2">
-            <Button type="submit" disabled={busy || !ready}>
-              {t(draft.mode === 'plan' ? 'savePlan' : 'saveRequest')}
+          <div className="flex items-center justify-between gap-2">
+            <Button type="button" variant="ghost" disabled={busy} onClick={() => {
+              setError(null)
+              setEditing(false)
+            }}>
+              {t('decisionBack')}
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={busy}
-              onClick={() => {
-                setDraft(null)
-                setError(null)
-              }}
-            >
-              {t('cancel')}
+            <Button type="submit" disabled={busy || !ready}>
+              {t(draft.mode === 'information' ? 'saveRequest' : 'savePlan')}
             </Button>
           </div>
         </form>
       )}
-      {error && (
-        <p
-          role="alert"
-          id="decision-error"
-          className="font-medium text-destructive"
-        >
-          {t('errors.' + error)}
-        </p>
-      )}
-
-      {!draft &&
+      {!editing &&
         ((account.critical && !work?.issueResolved) ||
           plan?.status === 'active') && (
           <section className="space-y-2 border-t pt-3">
@@ -283,10 +284,7 @@ export function AccountDecision({
           </section>
         )}
       {readError && (
-        <div role="alert">
-          {t('storageError')}{' '}
-          <Button variant="outline" onClick={() => void retry()}>{t('retry')}</Button>
-        </div>
+        <Button variant="outline" onClick={() => void retry()}>{t('retry')}</Button>
       )}
       {!ready && !readError && <p role="status">{t('unavailable')}</p>}
     </div>

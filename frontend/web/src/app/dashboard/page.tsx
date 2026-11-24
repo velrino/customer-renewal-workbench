@@ -1,5 +1,5 @@
 import { Dashboard } from '@/modules/admin/features/dashboard/Dashboard'
 
 export default function Page() {
-  return <Dashboard view="dashboard" />
+  return <Dashboard />
 }
