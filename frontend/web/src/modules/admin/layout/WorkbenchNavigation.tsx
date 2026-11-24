@@ -1,6 +1,7 @@
 'use client'
 
 import { BriefcaseBusiness, ExternalLink, LayoutDashboard, UserRound, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { SelectDropdown } from '@/shared/ui/select-dropdown'
@@ -72,6 +73,20 @@ export function Navigation() {
 
 export function Navbar({ onReset }: { onReset: () => Promise<void> }) {
   const t = useTranslations('nav')
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => {
+    function onEscape(event: KeyboardEvent) {
+      if (event.key !== 'Escape' || event.repeat || event.isComposing || event.defaultPrevented) return
+      // Check before an open overlay handles this same key and unmounts.
+      if (document.querySelector('[role="dialog"]:not([data-state="closed"]), [role="alertdialog"], [role="listbox"]:not([data-state="closed"]), [aria-roledescription="sortable"][aria-pressed="true"]')) return
+      event.preventDefault()
+      setMenuOpen(true)
+    }
+    window.addEventListener('keydown', onEscape, true)
+    return () => window.removeEventListener('keydown', onEscape, true)
+  }, [])
+
   return (
     <header className="flex h-16 items-center gap-4 px-4">
       <SidebarTrigger variant="outline" />
@@ -80,9 +95,9 @@ export function Navbar({ onReset }: { onReset: () => Promise<void> }) {
         {t('overview')}
       </span>
       <ThemeDialog />
-      <Dialog>
+      <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
         <DialogTrigger asChild>
-          <Button variant="secondary" size="icon" className="rounded-full" aria-label={t('userMenu')} title={t('userMenu')}>
+          <Button variant="secondary" size="icon" className="rounded-full" aria-keyshortcuts="Escape" aria-label={t('userMenu')} title={t('userMenu')}>
             <UserRound aria-hidden="true" />
           </Button>
         </DialogTrigger>
