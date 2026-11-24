@@ -215,11 +215,11 @@ The table projects monthly spend for a hypothetical shared workload at each revi
 
 I used Fable 5.2 to draft the [plan in issue #1](https://github.com/velrino/customer-renewal-workbench/issues/1). GPT 6.2 Astra reviewed it, and GPT 6.2 Sol implemented it.
 
-I then used Opus 5.2 and GPT 6.2 Astra to review the code from different perspectives. The review focused on three areas.
+I then used Opus 5.2 and GPT 6.2 Astra to review the code from a software architect’s and a software engineer’s perspective. I also used Grok, Gemini 4 Argon, and DeepSeek as AI penetration testers. I gave each perspective a different focus.
 
-- Duplicated logic
-- Potential vulnerabilities
-- Opportunities to simplify the implementation
+- **Architecture.** Examine how the frontend and backend divide responsibilities and where the two implementations duplicate renewal rules.
+- **Software engineering.** Look for duplicated logic and opportunities to simplify the implementation while preserving behavior.
+- **Penetration testing.** Look for potential vulnerabilities in the public demo, especially around browser input, shared data, and API access.
 
 Claude’s [review in issue #33](https://github.com/velrino/customer-renewal-workbench/issues/33) records its findings, the checks it ran, and what still needed verification.
 
