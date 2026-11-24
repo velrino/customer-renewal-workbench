@@ -1,6 +1,7 @@
 import './globals.css'
 import { ScrollToTop } from './ScrollToTop'
 import { Providers } from './providers'
+import { ReviewerGate } from '@/modules/identity/ReviewerGate'
 import { AdminRoot } from '@/modules/admin/AdminRoot'
 import { EnvironmentProvider } from '@/shared/api/environment'
 import { routing } from '@/shared/i18n/routing'
@@ -17,9 +18,11 @@ export default function RootLayout({
       <body>
         <ScrollToTop />
         <Providers>
-          <EnvironmentProvider>
-            <AdminRoot>{children}</AdminRoot>
-          </EnvironmentProvider>
+          <ReviewerGate>
+            <EnvironmentProvider>
+              <AdminRoot>{children}</AdminRoot>
+            </EnvironmentProvider>
+          </ReviewerGate>
         </Providers>
       </body>
     </html>

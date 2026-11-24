@@ -35,7 +35,7 @@ func TestHealth(t *testing.T) {
 					}
 					<-release
 					return 10 * time.Millisecond, tc.err
-				}, 0)
+				}, 0, false)
 				for range 4 {
 					go func() {
 						w := httptest.NewRecorder()
@@ -91,7 +91,7 @@ func TestHealth(t *testing.T) {
 }
 
 func TestDocsAndRoutes(t *testing.T) {
-	h := Routes("test", nil, 0)
+	h := Routes("test", nil, 0, false)
 	for _, tc := range []struct {
 		method, path string
 		code         int
@@ -116,6 +116,37 @@ func TestDocsAndRoutes(t *testing.T) {
 			responses := spec.Paths["/"]["get"].Responses
 			if responses["200"] == nil || responses["503"] == nil {
 				t.Fatal("incomplete health contract")
+			}
+		}
+	}
+}
+
+func TestReviewerContract(t *testing.T) {
+	for _, local := range []bool{false, true} {
+		req := httptest.NewRequest("GET", "/openapi.json", nil)
+		w := httptest.NewRecorder()
+		Routes("test", nil, 0, local).ServeHTTP(w, req)
+		var contract struct {
+			Paths map[string]map[string]struct {
+				Security  []map[string][]string
+				Responses map[string]json.RawMessage
+			}
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &contract); err != nil {
+			t.Fatal(err)
+		}
+		_, login := contract.Paths["/reviewer/login"]
+		if login != local {
+			t.Fatal("sign-in route differs from profile")
+		}
+		for path, ops := range contract.Paths {
+			if !strings.HasPrefix(path, "/workbench/") {
+				continue
+			}
+			for _, op := range ops {
+				if (len(op.Security) > 0) != local || (op.Responses["401"] != nil) != local {
+					t.Fatalf("unexpected security for %s in local profile %t", path, local)
+				}
 			}
 		}
 	}

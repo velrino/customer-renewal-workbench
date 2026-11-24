@@ -51,6 +51,8 @@ When the API recovers, a reviewer who previously selected **Shared API** returns
 
 [Editable Excalidraw source](docs/ARCHITECTURE/architecture.excalidraw)
 
+The optional reviewer profile runs on loopback. Firebase Authentication Emulator verifies the local reviewer, and the Go API checks the resulting session before each renewal operation. The shared board for this profile lives in Firestore Emulator.
+
 ### Local and shared writes
 
 A local save validates the account revision and weekly capacity in an IndexedDB transaction. A shared save makes those checks in a Firestore transaction. An open editor keeps its original environment if connectivity changes. [API guide](backend/api/README.md)
@@ -68,7 +70,20 @@ To start both services, install the Go version in [backend/api/go.mod](backend/a
 
 Open the [local dashboard](http://127.0.0.1:3000/). The [frontend guide](frontend/web/README.md) covers the folder structure, build, and telemetry setup.
 
+### Authenticated local reviewer
+
+With Go and Java 21+ on your PATH, run `pnpm dev:reviewer` after installing dependencies. It starts Firebase Authentication and Firestore emulators, creates one reviewer with a random password, and starts the local API and dashboard. Open [reviewer sign-in](http://127.0.0.1:3100/) and use the credentials in `.local-reviewer/credentials.json` (ignored by Git). Keep the file on your workstation.
+
+Choose **User menu → Environment → API** to use the emulated shared board. **Sign out** ends the session. Refreshing the tab requires signing in again. Stop the profile with Ctrl+C. The next run creates a fresh emulator board and restores the reviewer using the local credential file. The hosted demo and the default development profile continue to support anonymous reviewers. [Local API reference](http://127.0.0.1:8181/docs#tag/renewals)
+
 ## Renewal flows
+
+### Reviewer sign-in
+
+[![Local sign-in, session validation and emulator write](docs/ARCHITECTURE/steps/06-local-reviewer/diagram.png)](docs/ARCHITECTURE/steps/06-local-reviewer/diagram.png)
+
+[Flow details](docs/ARCHITECTURE/steps/06-local-reviewer/) · [Editable Mermaid source](docs/ARCHITECTURE/steps/06-local-reviewer/SEQUENCE.txt)
+
 
 ### Local mode
 

@@ -6,6 +6,7 @@ target/
 *.p12
 *.key
 !/docs/openapi.json
+!/docs/reviewer-paths.json
 !/package.json
 !/turbo.json
 !/internal/modules/renewals/testdata/conformance.json

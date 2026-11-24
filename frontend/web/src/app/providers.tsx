@@ -12,7 +12,11 @@ import { routing } from '@/shared/i18n/routing'
 import messages from '@/shared/i18n/messages/en.json'
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  useEffect(() => { void initializeAnalytics(); void initializeObservability() }, [])
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_LOCAL_REVIEWER === '1') return
+    void initializeAnalytics()
+    void initializeObservability()
+  }, [])
 
   return (
     <NextIntlClientProvider

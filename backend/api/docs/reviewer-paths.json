@@ -1,0 +1,97 @@
+{
+  "/reviewer/login": {
+    "post": {
+      "tags": [
+        "Reviewer"
+      ],
+      "operationId": "signInReviewer",
+      "summary": "Sign in to the local reviewer profile",
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "email",
+                "password"
+              ],
+              "properties": {
+                "email": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "password": {
+                  "type": "string",
+                  "format": "password",
+                  "writeOnly": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Local API session",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token",
+                  "expiresIn"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  },
+                  "expiresIn": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Invalid input"
+        },
+        "401": {
+          "description": "Invalid reviewer credentials"
+        },
+        "415": {
+          "description": "JSON required"
+        },
+        "429": {
+          "description": "Sign-in quota or session limit reached"
+        },
+        "503": {
+          "description": "Authentication emulator unavailable"
+        }
+      }
+    }
+  },
+  "/reviewer/logout": {
+    "post": {
+      "tags": [
+        "Reviewer"
+      ],
+      "operationId": "signOutReviewer",
+      "summary": "Revoke this local session",
+      "security": [
+        {
+          "reviewerSession": []
+        }
+      ],
+      "responses": {
+        "204": {
+          "description": "Signed out"
+        },
+        "401": {
+          "description": "Session expired or invalid"
+        }
+      }
+    }
+  }
+}

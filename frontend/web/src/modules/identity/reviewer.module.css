@@ -1,0 +1,30 @@
+.page { min-height: 100svh; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); background: #fafbf9; color: #172c32; color-scheme: light; }
+.story { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: 3rem; padding: clamp(2rem, 5vw, 5rem); background: #133e45; color: #f5f9ef; }
+.story::after { content: ''; position: absolute; z-index: -1; width: 85%; aspect-ratio: 1; right: -44%; bottom: -7%; border-radius: 50%; border: 1px solid #9bcbb63b; box-shadow: 0 0 0 2.5rem #133e45, 0 0 0 calc(2.5rem + 1px) #9bcbb63b, 0 0 0 5rem #133e45, 0 0 0 calc(5rem + 1px) #9bcbb63b; }
+.brand, .scope { display: flex; align-items: center; gap: .7rem; font-size: .88rem; }
+.brand { font-weight: 650; }
+.message h1 { font-size: clamp(3rem, 6vw, 6.5rem); line-height: .99; letter-spacing: -.065em; font-weight: 550; }
+.message p { max-width: 29rem; margin-top: 1.65rem; line-height: 1.65; color: #d4e5e0; }
+.scope span { width: .5rem; height: .5rem; background: #b1dabd; border-radius: 50%; }
+.panel { display: grid; place-items: center; padding: clamp(1.5rem, 5vw, 5rem); }
+.form { width: min(100%, 24rem); }
+.form h2 { font-size: clamp(2rem, 3vw, 3rem); font-weight: 600; line-height: 1.1; letter-spacing: -.055em; }
+.form p { color: #53656a; margin: .9rem 0 2rem; }
+.form label { display: block; margin: 1.1rem 0 .45rem; font-size: .9rem; font-weight: 600; }
+.form input { width: 100%; min-height: 3rem; border: 1px solid #9eaeb0; border-radius: .5rem; background: white; padding: .6rem .9rem; }
+.form :focus-visible { outline: 3px solid #297a76; outline-offset: 2px; }
+.password { position: relative; }
+.password input { padding-right: 3rem; }
+.password button { position: absolute; right: 0; top: 0; height: 100%; width: 3rem; display: grid; place-items: center; cursor: pointer; }
+.submit { width: 100%; margin-top: 1.6rem; min-height: 3rem; padding: .6rem 1rem; border-radius: .5rem; background: #164e52; color: white; display: flex; align-items: center; justify-content: space-between; font-weight: 600; cursor: pointer; }
+.submit:hover { background: #103b3f; }
+.submit:disabled { opacity: .7; }
+.error { margin-top: .85rem; color: #9a3024; }
+@media (max-width: 700px) {
+  .page { grid-template-columns: 1fr; align-content: start; }
+  .story { padding: 1.5rem; gap: 1.5rem; }
+  .message h1 { font-size: 2.9rem; }
+  .message h1 br { display: none; }
+  .message p { margin-top: .7rem; }
+  .panel { padding: 2.5rem 1.5rem; }
+}
