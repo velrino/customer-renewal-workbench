@@ -7,7 +7,7 @@
 - [Frontend guide](frontend/web/README.md)
 - [Backend guide](backend/api/README.md)
 - [Project plan](docs/PLANS/0-START/plan.excalidraw)
-- [Plan preview](docs/PLANS/0-START/plan.svg)
+- [Plan preview · Delivered and At scale](docs/PLANS/0-START/plan.svg)
 
 ## Table of contents
 
@@ -22,6 +22,7 @@
 - [Reviewer walkthrough](#reviewer-walkthrough)
 - [Persistence and scope](#persistence-and-scope)
 - [Decision trade-offs](#decision-trade-offs)
+  - [Delivered and at scale](#delivered-and-at-scale)
   - [Product and workflow](#product-and-workflow)
   - [Browser and shared data](#browser-and-shared-data)
   - [Delivery and operations](#delivery-and-operations)
@@ -142,6 +143,19 @@ Start in a fresh browser profile and skip or finish the quick tour.
 
 ## Decision trade-offs
 
+### Delivered and at scale
+
+Read each row across. The right column describes an option and the condition that would justify it. [Full visual plan](docs/PLANS/0-START/plan.svg) · [Editable source](docs/PLANS/0-START/plan.excalidraw)
+
+[![Delivered and at scale diagrams showing API writes, Firestore subscriptions and browser storage](docs/PLANS/0-START/delivered-and-at-scale.png)](docs/PLANS/0-START/plan.svg)
+
+| Delivered | At scale |
+| --- | --- |
+| Six fictional renewals share two intervention slots. Evidence, an owner and a follow-up date make each choice reviewable. | When teams manage separate portfolios, use contractual dates and allocate capacity per team and planning period. |
+| IndexedDB keeps Local mode usable through an API outage. Local edits stay in that browser when the shared board returns. | If reviewers need offline submissions, queue only edits intended for sharing and resolve conflicts against current account revisions and capacity. |
+| The API writes one shared document in a transaction. Every subscribed browser receives the committed board. | If contention or listener traffic grows, split accounts into documents, narrow subscriptions and reserve capacity in the same transaction as the plan. |
+| Anyone can reset the public demo after confirmation, subject to a shared cooldown. | Before onboarding real customers, scope reads and writes to authenticated workspace members and restrict reset permissions. |
+
 ### Product and workflow
 
 | Decision | What we gain | Cost and when to revisit |
@@ -180,7 +194,7 @@ The [storage adapters](frontend/web/src/shared/storage/), [renewal handlers](bac
 
 ## Monthly costs
 
-The planning model estimates monthly spend in USD by number of active reviewers. Choose a hosting row for the total. The Pages or Hobby scenario assumes eligibility for the free hosting tier, and the Pro scenario includes one paid seat. [Cost breakdown and assumptions](docs/COST/README.md)
+The table projects monthly spend for a hypothetical shared workload at each reviewer count. Actual demo traffic and charges have not been measured here. Choose a hosting row for the total. The Pages or Hobby scenario assumes eligibility for the free hosting tier, and the Pro scenario includes one paid seat. [Cost breakdown and assumptions](docs/COST/README.md)
 
 | Estimated monthly cost (USD)     |      1 |    100 |  1,000 | 10,000 | 100,000 |
 | -------------------------------- | -----: | -----: | -----: | -----: | ------: |
