@@ -10,6 +10,7 @@ type Availability = 'checking' | 'available' | 'unavailable'
 
 const EnvironmentContext = createContext<{
   environment: Environment
+  preferredEnvironment: Environment
   availability: Availability
   select: (value: string) => void
 } | null>(null)
@@ -60,14 +61,15 @@ export function EnvironmentProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const environment = prefs.selected === 'api' && availability === 'available' ? 'api' : 'local'
+  const preferredEnvironment = prefs.selected === 'api' ? 'api' : 'local'
+  const environment = availability === 'available' ? preferredEnvironment : 'local'
   function select(value: string) {
     if (value === 'local' || (value === 'api' && availability === 'available')) {
       update({ selected: value })
     }
   }
 
-  return <EnvironmentContext.Provider value={{ environment, availability, select }}>{children}</EnvironmentContext.Provider>
+  return <EnvironmentContext.Provider value={{ environment, preferredEnvironment, availability, select }}>{children}</EnvironmentContext.Provider>
 }
 
 export function useEnvironment() {

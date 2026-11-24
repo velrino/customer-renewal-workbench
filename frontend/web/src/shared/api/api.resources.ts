@@ -1,8 +1,11 @@
 import type { ApiRequest } from './api.interface'
 
 export class ApiError extends Error {
-  constructor(readonly reason: string) {
+  readonly reason: string
+
+  constructor(reason: string) {
     super(reason)
+    this.reason = reason
   }
 }
 
