@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useState, type ReactNode } from 'react'
 import { preferenceKeys } from '@/shared/storage/local-storage/preferences'
 import { usePreferenceRecord } from '@/shared/storage/local-storage/preferences/use-preference-record'
+import { useSharedBoard } from '@/shared/renewals/hooks/useSharedBoard'
 import { API } from './api.request'
 
 type Environment = 'local' | 'api'
@@ -12,6 +13,7 @@ const EnvironmentContext = createContext<{
   environment: Environment
   preferredEnvironment: Environment
   availability: Availability
+  board: ReturnType<typeof useSharedBoard>
   setHeldEnvironment: (value: Environment | null) => void
   select: (value: string) => void
 } | null>(null)
@@ -19,7 +21,7 @@ const EnvironmentContext = createContext<{
 export function EnvironmentProvider({ children }: { children: ReactNode }) {
   const { prefs, update } = usePreferenceRecord(preferenceKeys.environment)
   const [heldEnvironment, setHeldEnvironment] = useState<Environment | null>(null)
-  const [availability, setAvailability] = useState<Availability>('checking')
+  const [health, setHealth] = useState<Availability>('checking')
 
   useEffect(() => {
     let active: AbortController | undefined
@@ -27,7 +29,7 @@ export function EnvironmentProvider({ children }: { children: ReactNode }) {
     function offline() {
       active?.abort()
       active = undefined
-      setAvailability('unavailable')
+      setHealth('unavailable')
     }
 
     async function check() {
@@ -37,10 +39,10 @@ export function EnvironmentProvider({ children }: { children: ReactNode }) {
       active = controller
       const timeout = window.setTimeout(() => controller.abort(), 6000)
       try {
-        const health = await API.health.read(controller.signal)
-        if (active === controller) setAvailability(health.status === 'ok' ? 'available' : 'unavailable')
+        const result = await API.health.read(controller.signal)
+        if (active === controller) setHealth(result.status === 'ok' ? 'available' : 'unavailable')
       } catch {
-        if (active === controller) setAvailability('unavailable')
+        if (active === controller) setHealth('unavailable')
       } finally {
         clearTimeout(timeout)
         if (active === controller) active = undefined
@@ -64,6 +66,9 @@ export function EnvironmentProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const preferredEnvironment = prefs.selected === 'api' ? 'api' : 'local'
+  const needsBoard = preferredEnvironment === 'api' || heldEnvironment === 'api'
+  const board = useSharedBoard(heldEnvironment === 'api' || (preferredEnvironment === 'api' && health === 'available'))
+  const availability = needsBoard && health === 'available' ? board.status : health
   const environment = heldEnvironment ?? (availability === 'available' ? preferredEnvironment : 'local')
   function select(value: string) {
     if (value === 'local' || (value === 'api' && availability === 'available')) {
@@ -71,7 +76,7 @@ export function EnvironmentProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  return <EnvironmentContext.Provider value={{ environment, preferredEnvironment, availability, select, setHeldEnvironment }}>{children}</EnvironmentContext.Provider>
+  return <EnvironmentContext.Provider value={{ environment, preferredEnvironment, availability, board, select, setHeldEnvironment }}>{children}</EnvironmentContext.Provider>
 }
 
 export function useEnvironment() {

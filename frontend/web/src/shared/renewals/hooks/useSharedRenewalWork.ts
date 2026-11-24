@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react'
 import { API } from '@/shared/api/api.request'
 import { useEnvironment } from '@/shared/api/environment'
 import { ApiError } from '@/shared/api/api.resources'
 import type { Account } from '../accounts'
-import { WorkflowError, type Changes, type Command, type Failure } from '../workflow'
+import { WorkflowError, type Command, type Failure } from '../workflow'
 import type { AccountCommand } from './useRenewalWork'
 
 function reason(error: unknown): Failure {
@@ -17,34 +16,9 @@ function reason(error: unknown): Failure {
 }
 
 export function useSharedRenewalWork() {
-  const [changes, setChanges] = useState<Changes>({})
-  const { availability } = useEnvironment()
-  const [snapshotReady, setReady] = useState(false)
-  const ready = snapshotReady && availability === 'available'
-  const [readError, setReadError] = useState(false)
-  const [attempt, retry] = useState(0)
-  useEffect(() => {
-    let active = true
-    let unsubscribe: (() => void) | undefined
-    function failed() {
-      if (!active) return
-      setReadError(true)
-      setReady(false)
-    }
-    import('../workflow/shared-board').then(({ subscribeBoard }) => {
-      if (!active) return
-      unsubscribe = subscribeBoard((snapshot, cached) => {
-        if (!active) return
-        setChanges(snapshot)
-        setReady(!cached)
-        setReadError(cached)
-      }, failed)
-    }).catch(failed)
-    return () => {
-      active = false
-      unsubscribe?.()
-    }
-  }, [attempt])
+  const { board, availability } = useEnvironment()
+  const ready = availability === 'available' && board.status === 'available'
+  const readError = board.status === 'unavailable'
 
   async function save(account: Account, revision: number, command: Command) {
     if (!ready) throw new WorkflowError('storage')
@@ -71,9 +45,5 @@ export function useSharedRenewalWork() {
     await API.workbench.reset()
   }
 
-  async function retryRead() {
-    setReadError(false)
-    retry(current => current + 1)
-  }
-  return { changes, ready, readError, save, saveTwo, resetWork, retryRead }
+  return { changes: board.changes, ready, readError, save, saveTwo, resetWork, retryRead: board.retryRead }
 }

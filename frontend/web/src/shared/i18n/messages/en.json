@@ -11,10 +11,10 @@
     "local": "Local",
     "api": "API",
     "environmentHint": {
-      "checking": "Checking API availability.",
+      "checking": "Checking access to the shared workbench.",
       "local": "Save work in this browser.",
       "api": "Changes are shared with all reviewers.",
-      "unavailable": "API is offline. Local is active."
+      "unavailable": "Shared work is unavailable. You can work locally."
     },
     "reset": "Reset {environment} workbench",
     "resetTitle": "Reset this workbench?",
@@ -234,7 +234,7 @@
     },
     "storageError": "Couldn’t load the latest work for this environment. Try again.",
     "retry": "Retry",
-    "sharedOffline": "The shared API is unavailable. Keep this account open to resume when it reconnects.",
+    "sharedOffline": "Shared work is unavailable. Keep this account open to resume when it reconnects.",
     "unavailable": "Loading saved work…",
     "capacityNames": "Allocated to {names}",
     "noReview": "No accounts are flagged for review.",
