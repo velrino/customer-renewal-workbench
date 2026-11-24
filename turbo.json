@@ -9,7 +9,8 @@
       "dependsOn": [
         "^build"
       ],
-      "env": ["NEXT_PUBLIC_POSTHOG_ENABLED", "NEXT_PUBLIC_POSTHOG_HOST", "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN"],
+      "env": ["NEXT_PUBLIC_POSTHOG_ENABLED", "NEXT_PUBLIC_POSTHOG_HOST", "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN", "NEXT_PUBLIC_SENTRY_DSN", "VERCEL_GIT_COMMIT_SHA", "VERCEL_ENV"],
+      "passThroughEnv": ["SENTRY_AUTH_TOKEN"],
       "outputs": [
         "out/**"
       ]

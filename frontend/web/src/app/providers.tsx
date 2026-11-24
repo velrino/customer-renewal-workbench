@@ -1,5 +1,6 @@
 'use client'
 
+import '@/shared/telemetry/sentry'
 import { useEffect } from 'react'
 import { initializePostHog } from '@/shared/telemetry/posthog'
 import { preferenceKeys } from '@/shared/storage/local-storage/preferences'
