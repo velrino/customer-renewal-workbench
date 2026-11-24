@@ -1,6 +1,6 @@
 let initialization: Promise<void> | undefined
 
-export function initializePostHog() {
+export function initializeAnalytics() {
   if (typeof window === 'undefined' || process.env.NODE_ENV !== 'production' ||
     ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname) ||
     navigator.doNotTrack === '1' || process.env.NEXT_PUBLIC_POSTHOG_ENABLED !== 'true') return

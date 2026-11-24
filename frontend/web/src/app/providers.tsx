@@ -1,8 +1,8 @@
 'use client'
 
-import '@/shared/telemetry/sentry'
+import '@/shared/telemetry/observability'
 import { useEffect } from 'react'
-import { initializePostHog } from '@/shared/telemetry/posthog'
+import { initializeAnalytics } from '@/shared/telemetry/analytics'
 import { preferenceKeys } from '@/shared/storage/local-storage/preferences'
 
 import { NextIntlClientProvider } from 'next-intl'
@@ -12,7 +12,7 @@ import { routing } from '@/shared/i18n/routing'
 import messages from '@/shared/i18n/messages/en.json'
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  useEffect(() => { void initializePostHog() }, [])
+  useEffect(() => { void initializeAnalytics() }, [])
 
   return (
     <NextIntlClientProvider

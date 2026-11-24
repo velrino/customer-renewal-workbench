@@ -1,100 +1,60 @@
 # Customer Renewal Workbench
 
-**TL;DR** — A customer-success manager oversees 40 accounts and can personally help two this week. This workbench brings renewal dates, usage and support notes into one queue so the manager can choose two accounts, record the evidence and assign each follow-up to an owner.
+**TL;DR** — A Customer Success manager oversees 40 accounts and can help two this week. This Hacker Eval prototype uses six fictional B2B accounts to show how the manager can review renewal evidence, choose interventions, and assign follow-ups. The head of Customer Success is the buyer.
 
-This Hacker Eval prototype uses six fictional B2B software accounts. The buyer is the head of Customer Success. The app simulates the account owner’s follow-through.
+[Live dashboard](https://customer-renewal-workbench.vercel.app/) · [Account queue](https://customer-renewal-workbench.vercel.app/#account-queue) · [Frontend guide](frontend/web/README.md) · [Project plan](docs/PLANS/0-START/plan.excalidraw) · [Plan preview](docs/PLANS/0-START/plan.svg) · [Cost estimates](docs/COST/README.md)
 
-**Try the prototype** — [Open the dashboard](https://customer-renewal-workbench.vercel.app/) or [open the account queue](https://customer-renewal-workbench.vercel.app/#account-queue). Start with a fresh browser profile for the original six cases. Changes are saved in this browser and survive a reload. Open an account from the queue. The Accounts card on the dashboard also opens the same detail.
+## Run locally
 
-[Editable project plan](docs/PLANS/0-START/plan.excalidraw) · [Estimated monthly costs by user count](docs/COST/README.md)
-
-![Customer Renewal Workbench plan showing the account queue, intervention workflow, and deployment estimates](docs/PLANS/0-START/plan.svg)
-
-## Starting portfolio
-
-The prototype opens with six synthetic accounts. Annual contract value (ACV) is in USD. The demo calculates renewal dates relative to today in the browser’s local time zone. Saved follow-up dates retain the calendar day the manager chose. Adoption is the percentage of licensed users active that week.
-
-| Account | ACV | Renews in | Weekly adoption | Other evidence |
-| --- | ---: | ---: | --- | --- |
-| Atlas | $100,000 | 45 days | 85% | No unresolved issue. Positive sponsor. |
-| Beacon | $18,000 | 14 days | Fell from 70% to 20% | Sponsor unreachable. |
-| Cove | $80,000 | 21 days | 80% | One critical issue open. Positive sponsor. |
-| Drift | $40,000 | 30 days | Unknown | Usage reporting failed. Sponsor sentiment is unknown. |
-| Ember | $55,000 | 7 days | 35% | Sponsor says budget approval is pending. |
-| Field | $25,000 | 60 days | 65% | Issue resolved. Positive sponsor. |
-
-## How the manager chooses two interventions
-
-One defensible choice is **Ember and Cove**. Ember renews in seven days, and the sponsor has identified a specific dependency. Its owner can identify the budget approver and confirm the decision date. For Cove, the owner can agree on a resolution date with support and schedule an update with the sponsor. Beacon is the closest alternative. Its drop in usage and unreachable sponsor warrant investigation, but the cause of that drop is unknown. The manager can choose Beacon and record their reasoning.
-
-Cove illustrates three distinct things the interface should show together:
-
-| What the manager sees | Example |
-| --- | --- |
-| Signal | A critical issue is open. Adoption is 80%, and the sponsor is positive. |
-| Hypothesis | The unresolved issue could delay renewal. The sponsor has yet to confirm its effect. |
-| Agreed plan | Once agreed, record “coordinate issue resolution,” assign an owner, and set a follow-up for two days after the sample day. |
-
-**Capacity rule:** A committed intervention occupies one weekly slot per account. Editing its owner or date keeps the same slot. An information request records an evidence gap and leaves the slot available. Resolving a concern updates the attention reason; the owner explicitly completes the plan to release the slot. This keeps the evidence and the commitment independently visible.
-
-## Reviewer walkthrough and acceptance checks
-
-Open the [public dashboard](https://customer-renewal-workbench.vercel.app/) in a fresh browser profile, or start the frontend locally using the setup below. Skip or finish the quick tour, then scroll to the account queue on the dashboard. The names below are the labels on the screen.
-
-1. Inspect **Cove**. Its critical issue, 80% adoption and positive sponsor are visible together on **Overview**. Compare **Drift**. Its adoption says **Unknown**, and its signal says the usage report failed. On **Plan**, choose **Request information**, enter “Corrected weekly usage report”, and choose **Save information request**. The confirmation says no extra slot was used, and the count stays at zero. The saved request appears on **Plan**.
-2. Open Cove, select **Plan**, and choose **Plan an intervention**. The suggested action is **Coordinate a fix for the critical issue**. Choose **Save intervention** with no owner. Enter Sam, then check that the calendar disables dates after Cove’s renewal. Choose a follow-up two days from today and save. The count becomes one. Reload, reopen Cove, and select **Plan**. The agreed plan still shows the action, Sam, the selected follow-up date, and the evidence from the time of the decision.
-3. On **Owner actions**, under **Account owner simulation**, choose **Mark critical issue resolved**. Cove changes from **Review now** to **Follow-up planned**. The current signal says the issue is resolved. The agreed plan still cites the open issue, and the slot stays in use. Leave this plan active.
-4. Open **Ember** and save **Confirm budget approval** with an owner and a follow-up within the next seven days. The count becomes two. Ember stays **Review now** because budget approval is still pending. Open **Beacon** and try to save a valid plan. The app says both weekly slots are in use. Choose **Edit intervention** on Ember, change the owner, and save. The count stays at two.
-5. Choose **Mark intervention complete** on Ember. One slot is free. Ember leaves **Review now** and appears in the queue as **Reviewed** with its pending budget approval still visible. Reload to confirm the status persists. Save a plan for Beacon to use the available slot. An independent browser profile shows the original six accounts and zero saved plans.
-6. Choose **Mark intervention complete** on Cove. Its status becomes **Routine review**, the completed plan remains visible, and a slot is free. Search for an absent name. The queue says “No accounts match your search or filters.” Choose **Show all accounts**. Scroll up to the dashboard cards. Open **Renewing within 30 days**, then **Remove 30-day renewal filter**. Press Escape to close an account dialog. Focus returns to the control that opened it.
-
-## Decision rules
-
-An open critical issue warrants **Review now**. Pending budget approval warrants **Review now** when renewal is within 14 days inclusive. A decline of at least 30 percentage points in adoption warrants **Review now** when the sponsor is also unreachable. These review rules win over an open plan, so Ember stays **Review now** after a plan is saved while budget approval is pending. Completing the intervention moves the account to **Reviewed** while that signal persists. If no review rule matches, missing usage or unknown sentiment is **Needs information**. An active intervention is **Follow-up planned** only when no review rule still matches. Cove reaches that status after its critical issue is resolved and while its plan remains active. Completing that plan makes Cove **Routine review**. Atlas and Field start as **Routine review**. Within each attention group the queue sorts by earliest renewal. Contract value is not a tie-breaker. The manager chooses the interventions. Missing adoption stays **Unknown** and is not stored as zero. A hypothesis says what could or may be true and asks the manager to check it. It is not a prediction.
-
-## Engineering choices and scope
-
-The frontend is a Next.js App Router workbench with React, an English next-intl catalog and selected shadcn-admin components. Its dashboard and account list share a detail dialog. Comparing accounts requires opening each detail in turn. That trade-off keeps the main workflow small enough to finish and verify within the exercise.
-
-The frontend runs locally and supports static export. IndexedDB persists records by account. Each write reads current commitments and updates the plan in one transaction. Two tabs therefore share a single weekly limit. A revision check rejects stale edits, and tabs refresh after a change. If browser storage is unavailable, writes are disabled and the draft can be retried. The synthetic week is fixed so the reviewer can reproduce the cases.
-
-Browser persistence keeps the walkthrough independent of backend setup. Clearing site data resets it. Another device or profile has a separate portfolio. The Go API and Firestore in the design diagram are a possible later phase for shared data across devices.
-
-The exercise uses synthetic data and explainable attention rules. Live analytics, actual outreach, support and CRM integrations, churn prediction, paid AI features, billing, and production account management are outside the prototype scope.
-
-## Proposed success metric
-
-**Share of accounts renewing within 30 days that have a timely, evidence-backed intervention.** Count each account once. Include it in the numerator when a plan was saved before renewal, links to a specific signal, names an owner, and schedules follow-up by the renewal date. In the starting portfolio the denominator is four: Beacon, Cove, Drift, and Ember. For a real reporting period, compare plan creation timestamps and follow-up dates with each renewal date. A point-in-time metric would also need plan history. The prototype stores the latest plan and uses a fixed sample day, so it does not report a measured business result. It measures planning coverage. Assessing whether an intervention improved renewal outcomes would require actual outcomes and a credible comparison.
-
-## Setup, verification, and submission
-
-From the repository root, start the frontend with Node.js 22.12+ and pnpm 10.
+Use Node.js 22.12+ and pnpm 10. Run these commands from the repository root.
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open the [local dashboard](http://127.0.0.1:3000/).
+Open the [local dashboard](http://127.0.0.1:3000/). The [frontend guide](frontend/web/README.md) covers the folder structure, build, and telemetry setup.
 
-Run `pnpm typecheck`, `pnpm test`, and `pnpm build` from the repository root. Turborepo runs each task in the workspace packages that implement it. The frontend static build is written to `frontend/web/out/`. `pnpm test` checks the attention rules, the slot limit, an information request, a missing owner, and Cove after the issue is resolved.
+## Starting portfolio
 
-### Verification
+Renewal dates are relative to today in the browser’s time zone. Adoption is the share of licensed users active that week.
 
-The project author personally checked the frontend.
+| Account | ACV (USD) | Renews in | Adoption | Evidence |
+| --- | ---: | ---: | --- | --- |
+| Atlas | $100,000 | 45 days | 85% | Positive sponsor and no unresolved issue |
+| Beacon | $18,000 | 14 days | 70% → 20% | Sponsor unreachable |
+| Cove | $80,000 | 21 days | 80% | Critical issue open and sponsor positive |
+| Drift | $40,000 | 30 days | Unknown | Usage report failed and sponsor sentiment unknown |
+| Ember | $55,000 | 7 days | 35% | Budget approval pending |
+| Field | $25,000 | 60 days | 65% | Issue resolved and sponsor positive |
 
-Codex ran `pnpm typecheck`, `pnpm test`, and `pnpm build` locally. All three passed. Its scripted headless Chrome walkthrough on a fresh profile opened the account queue and checked all six seeded rows, Drift’s unknown usage and information request, Cove’s conflicting signals, a missing owner, a follow-up after renewal, save and reload, issue resolution to Follow-up planned, focus returning to Cove, a third intervention rejected at capacity, and empty-search recovery. The rule tests also check that editing an existing plan keeps the same slot. A later agent session used Chrome DevTools on the local app and confirmed the screen labels in the walkthrough above, including Ember remaining Review now with an active plan and the same-tab control saving only one of the two plans. In a subsequent local Chrome check, Codex submitted Ember and Beacon plans from separate tabs with one slot remaining. Ember saved, Beacon received the capacity error, and reloading showed two occupied slots. An independent browser context showed zero occupied slots. Simulated channel failures and a closed database connection also exercised save and retry behavior. Safari, Firefox, physical devices and screen readers remain unverified.
+One defensible choice is **Ember and Cove**. For Ember, identify the budget approver and confirm the decision date. For Cove, agree on a resolution date with support and schedule a sponsor update. Beacon is a viable alternative while the cause of the adoption drop is investigated.
 
-AI assistance covered interface alternatives, the architecture diagram, implementation, documentation and scripted verification. The author directed the dashboard layout, modal behavior, theme options and phased frontend-first approach.
+## Decision rules
 
-[Public prototype](https://customer-renewal-workbench.vercel.app/) · [Local dashboard](http://127.0.0.1:3000/) · [Public repository](https://github.com/velrino/customer-renewal-workbench)
+- **Review now** applies to an open critical issue, pending budget approval within 14 days of renewal, or an adoption drop of at least 30 percentage points with an unreachable sponsor. An active plan leaves this status in place. Completing the plan changes it to **Reviewed** while the same concern persists.
+- When none of those rules applies, missing usage or unknown sentiment yields **Needs information**. Otherwise, an active intervention yields **Follow-up planned**, and the default is **Routine review**. Within each group, the queue sorts by earliest renewal.
+- A committed intervention uses one slot per account and requires evidence, an owner, and a follow-up by the renewal date. Edits keep the same slot, information requests use zero, and completing a plan frees its slot. Resolving a concern updates the current signal while preserving the plan’s original evidence.
 
-## Frontend telemetry
+## Reviewer walkthrough
 
-PostHog counts dashboard visits with its native `$pageview` event. An unexpected browser error also emits `crw-error` with its source. The browser sends no account identifiers, form fields, exception text, or query strings to PostHog. Configure `NEXT_PUBLIC_POSTHOG_ENABLED=true`, `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`, and `NEXT_PUBLIC_POSTHOG_HOST` at build time. Collection is disabled on localhost and respects Do Not Track.
+Start in a fresh browser profile and skip or finish the quick tour.
 
-Sentry groups unexpected browser exceptions for engineering investigation. Set `NEXT_PUBLIC_SENTRY_DSN` to enable reporting. Vercel supplies the release commit and environment at build time. Session replay is disabled in both clients. For production source maps, supply a build-only `SENTRY_AUTH_TOKEN` with release upload access and rebuild.
+1. Open **Cove** and check its critical issue alongside 80% adoption and positive sponsor sentiment. Open **Drift**, verify **Unknown** adoption, and save an information request for a corrected usage report. The slot count stays at zero.
+2. Save a **Cove** intervention with an owner and a follow-up two days from today. Check that a missing owner blocks saving and the calendar disables dates after renewal. Reload and reopen the plan to verify the saved evidence, owner, and date.
+3. Under Cove’s **Owner actions**, mark the critical issue resolved. Cove moves to **Follow-up planned**, retains the original plan evidence, and still occupies one slot.
+4. Save an **Ember** plan to fill the second slot. Ember stays **Review now**. Try saving **Beacon** and verify the limit. Edit Ember’s owner and check that the count stays at two.
+5. Complete Ember’s intervention. It moves to **Reviewed** with budget approval still pending. Reload to verify that status, then use the free slot for Beacon. Complete Cove’s plan and check that Cove returns to **Routine review** and still shows the completed plan.
+6. Search for an absent account and recover with **Show all accounts**. Toggle the dashboard’s 30-day renewal filter. Press Escape in an account dialog and verify focus returns to the trigger. An independent browser profile starts with zero saved plans.
 
-## Reviewing with an AI assistant
+## Persistence and scope
 
-Open [AGENTS.md](AGENTS.md) for project instructions and links to the review skills. Any reviewer can follow them as plain Markdown.
+IndexedDB saves work in the current browser. Each write checks capacity and updates the plan in one transaction across tabs. A revision check rejects stale edits. If storage fails, the draft can be retried. The diagram’s Go API and Firestore describe a possible later phase for shared data across devices. The prototype uses synthetic evidence and simulates owner actions.
+
+**Proposed success metric** — Share of accounts renewing within 30 days with a plan saved before renewal that cites a signal, names an owner, and schedules follow-up by renewal. The starting denominator is Beacon, Cove, Drift, and Ember. The dashboard measures planning coverage. Measuring renewal impact would require outcome data and a comparison.
+
+## Verification and attribution
+
+- The author personally checked the frontend and directed the dashboard layout, dialogs, theme options, and frontend-first approach.
+- Codex ran type checking, tests, and the static build. Chrome checks covered the account workflow, reloads, competing saves for the last slot, browser-profile isolation, and storage failure recovery. Safari, Firefox, physical devices, and screen readers remain unverified.
+- AI assistance covered design alternatives, the architecture diagram, implementation, documentation, and scripted verification. [Reviewer instructions](AGENTS.md)
