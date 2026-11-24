@@ -14,6 +14,10 @@ pnpm dev --filter=renewal-workbench-api
 
 Run `pnpm dev` from the root to start both the API and frontend. The server listens on port 8080 by default. Use `PORT` to change it and `APP_ENV` to label the environment. Local runs use Application Default Credentials. Keep credential files outside the checkout. Cloud Run uses its attached runtime identity.
 
+## Error reporting
+
+Set `SENTRY_DSN` to the Go API project DSN to enable reporting. Events use `APP_ENV` and the Cloud Run revision, or an explicit `SENTRY_RELEASE`. The HTTP middleware reports handler panics across routes. The background Firestore check reports unexpected errors once per refresh. Local runs can omit the DSN.
+
 ## Structure
 
 - `cmd/api` starts the server and reads environment settings.
