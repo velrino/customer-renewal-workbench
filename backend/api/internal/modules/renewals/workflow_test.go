@@ -92,23 +92,16 @@ func TestPlanEditsPreserveOriginalEvidence(t *testing.T) {
 	}
 }
 
-func TestResetAndRequestWindowExpiry(t *testing.T) {
+func TestResetCooldownExpiry(t *testing.T) {
 	now := time.Date(2026, 11, 24, 12, 0, 0, 0, time.UTC)
 	board := Board{}
-	limit := writeLimit{perPeer: 1, perInstance: 1}
 	for _, at := range []time.Time{now, now.Add(time.Minute)} {
 		if err := board.reset(at); err != nil {
 			t.Fatal(err)
 		}
-		if delay := limit.check("127.0.0.1:1234", at); delay != 0 {
-			t.Fatal(delay)
-		}
 		beforeExpiry := at.Add(time.Minute - time.Second)
-		if err := board.reset(beforeExpiry); err != retryAfter(time.Second) {
+		if err := board.reset(beforeExpiry); err != resetCooldownRemaining(time.Second) {
 			t.Fatalf("reset cooldown: %v", err)
-		}
-		if delay := limit.check("127.0.0.1:1234", beforeExpiry); delay != retryAfter(time.Second) {
-			t.Fatalf("request window: %v", delay)
 		}
 	}
 }

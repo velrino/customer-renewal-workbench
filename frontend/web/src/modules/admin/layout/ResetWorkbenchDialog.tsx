@@ -11,6 +11,7 @@ const resetColor = 'bg-[#9e0812] text-white hover:bg-[#87070f]'
 
 export function ResetWorkbenchDialog({ onReset }: { onReset: () => Promise<void> }) {
   const t = useTranslations('nav')
+  const limit = useTranslations('rateLimit')
   const { environment } = useEnvironment()
   const cancel = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
@@ -25,7 +26,9 @@ export function ResetWorkbenchDialog({ onReset }: { onReset: () => Promise<void>
       setOpen(false)
     } catch (error) {
       setOpen(false)
-      toast.error(t(error instanceof ApiError && error.reason === 'rateLimited' ? 'resetRateLimited' : 'resetError'))
+      toast.error(t(error instanceof ApiError && error.reason === 'rateLimited' ? 'resetRateLimited' : 'resetError'), {
+        description: error instanceof ApiError && error.retryAfterSeconds ? limit('retryAfter', { seconds: error.retryAfterSeconds }) : undefined,
+      })
     } finally {
       setBusy(false)
     }

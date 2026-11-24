@@ -52,6 +52,7 @@ export function AccountDecision({
   save: (account: Account, revision: number, command: Command) => Promise<void>
 }) {
   const t = useTranslations('dashboard')
+  const limit = useTranslations('rateLimit')
   const { environment, availability } = useEnvironment()
   const sharedUnavailable = environment === 'api' && availability !== 'available'
   const fmt = useFormatter()
@@ -98,7 +99,10 @@ export function AccountDecision({
     } catch (e) {
       const reason = e instanceof WorkflowError ? e.reason : 'storage'
       setError(reason)
-      toast.error(t('errors.' + reason), { id: 'account-decision-error' })
+      toast.error(t('errors.' + reason), {
+        id: 'account-decision-error',
+        description: e instanceof WorkflowError && e.retryAfterSeconds ? limit('retryAfter', { seconds: e.retryAfterSeconds }) : undefined,
+      })
       const invalidField = { ownerRequired: ownerId, questionRequired: questionId, invalidDate: followUpId }
       if (reason === 'ownerRequired' || reason === 'questionRequired' || reason === 'invalidDate') {
         document.getElementById(invalidField[reason])?.focus()

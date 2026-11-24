@@ -128,9 +128,12 @@ export type Failure =
   | 'storage'
 export class WorkflowError extends Error {
   readonly reason: Failure
-  constructor(reason: Failure) {
+  readonly retryAfterSeconds?: number
+
+  constructor(reason: Failure, retryAfterSeconds?: number) {
     super(reason)
     this.reason = reason
+    this.retryAfterSeconds = retryAfterSeconds
   }
 }
 

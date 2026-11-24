@@ -51,7 +51,7 @@ export function useSharedRenewalWork() {
     try {
       await API.workbench.save(account.id, revision, command)
     } catch (error) {
-      throw new WorkflowError(reason(error))
+      throw new WorkflowError(reason(error), error instanceof ApiError ? error.retryAfterSeconds : undefined)
     }
   }
 

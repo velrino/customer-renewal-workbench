@@ -116,9 +116,15 @@ func (b *Board) apply(id string, revision int64, cmd Command, now time.Time) err
 	return nil
 }
 
+const resetCooldown = time.Minute
+
+type resetCooldownRemaining time.Duration
+
+func (resetCooldownRemaining) Error() string { return "reset is on cooldown" }
+
 func (b *Board) reset(now time.Time) error {
 	if remaining := b.LastResetAt.Add(resetCooldown).Sub(now); remaining > 0 {
-		return retryAfter(remaining)
+		return resetCooldownRemaining(remaining)
 	}
 	b.LastResetAt = now
 	b.Version++

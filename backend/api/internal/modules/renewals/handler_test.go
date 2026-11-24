@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 )
 
 func TestMalformedWriteNeverReachesStore(t *testing.T) {
@@ -47,31 +46,29 @@ func TestResetWithoutBodyUsesCurrentBoard(t *testing.T) {
 	}
 }
 
-func TestWriteLimitBeforeStorage(t *testing.T) {
+func TestResetQuotaDoesNotBlockCommandsOrPreflight(t *testing.T) {
+	mux := http.NewServeMux()
 	calls := 0
-	handler := writeHandler(func(context.Context, func(*Board) error) error {
-		calls++
-		return nil
-	}, true, &writeLimit{perPeer: 1, perInstance: 2, until: time.Now().Add(time.Minute), peers: make(map[string]int)})
-	for _, tc := range []struct {
-		remote string
-		status int
-	}{
-		{"192.0.2.1:1001", 204},
-		{"192.0.2.1:1002", 429},
-		{"192.0.2.2:1001", 204},
-		{"192.0.2.3:1001", 429},
-	} {
-		req := httptest.NewRequest("POST", "/workbench/reset", nil)
-		req.RemoteAddr = tc.remote
+	Register(mux, func(context.Context, func(*Board) error) error { calls++; return nil })
+	reset := "/workbench/reset"
+	for i := range 4 {
 		out := httptest.NewRecorder()
-		handler(out, req)
-		if out.Code != tc.status || (out.Code == 429 && out.Header().Get("Retry-After") == "") {
-			t.Fatalf("peer %s: %d, headers %v", tc.remote, out.Code, out.Header())
+		mux.ServeHTTP(out, httptest.NewRequest("POST", reset, nil))
+		if i < 3 && out.Code != 204 {
+			t.Fatalf("reset %d: %d", i, out.Code)
+		}
+		if i == 3 && (out.Code != 429 || out.Header().Get("Access-Control-Allow-Origin") != "*" || out.Header().Get("Access-Control-Expose-Headers") != "Retry-After") {
+			t.Fatalf("throttled reset: %d %v", out.Code, out.Header())
 		}
 	}
-	if calls != 2 {
-		t.Fatalf("store received %d writes, want 2", calls)
+	preflight := httptest.NewRecorder()
+	mux.ServeHTTP(preflight, httptest.NewRequest("OPTIONS", reset, nil))
+	command := httptest.NewRequest("POST", "/workbench/accounts/cove/commands", strings.NewReader(`{"revision":0,"timeZone":"UTC","command":{"type":"resolve"}}`))
+	command.Header.Set("Content-Type", "application/json")
+	out := httptest.NewRecorder()
+	mux.ServeHTTP(out, command)
+	if preflight.Code != 204 || out.Code != 204 || calls != 4 {
+		t.Fatalf("preflight=%d command=%d store calls=%d", preflight.Code, out.Code, calls)
 	}
 }
 
