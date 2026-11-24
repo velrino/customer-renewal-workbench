@@ -213,6 +213,16 @@ The table projects monthly spend for a hypothetical shared workload at each revi
 
 ## AI tools and verification
 
-We used Fable 5.2 to draft the plan, GPT 6.2 Astra to review it, and GPT 6.2 Sol to implement it. Opus 5.2 and GPT 6.2 Astra reviewed the code from different perspectives, looking for duplicated logic, potential vulnerabilities, and ways to simplify the implementation.
+I used Fable 5.2 to draft the [plan in issue #1](https://github.com/velrino/customer-renewal-workbench/issues/1). GPT 6.2 Astra reviewed it, and GPT 6.2 Sol implemented it.
 
-The author checked the frontend. Codex ran type checks, tests, and the static build, and verified renewal workflows in Chrome, including what happens when two reviewers try to claim the last available slot.
+I then used Opus 5.2 and GPT 6.2 Astra to review the code from different perspectives. The review focused on three areas.
+
+- Duplicated logic
+- Potential vulnerabilities
+- Opportunities to simplify the implementation
+
+Claude’s [review in issue #33](https://github.com/velrino/customer-renewal-workbench/issues/33) records its findings, the checks it ran, and what still needed verification.
+
+I manually reviewed the frontend.
+
+I also used Codex to run type checks, tests, and the static build, as well as verify renewal workflows in the browser, including what happens when two reviewers try to claim the last available slot. Against the Firestore emulator, two independent Chromium profiles submitted competing plans. One received HTTP 204 and the other received HTTP 409 (`full`). A fresh read showed exactly two active plans. Codex also checked that local work stayed in its original browser and a shared reset invalidated an open draft.
