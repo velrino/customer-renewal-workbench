@@ -90,5 +90,9 @@ export function useRenewalWork() {
     setChanges({})
     publish()
   }
-  return { changes, resetWork, save, saveTwo, ready, readError, refresh }
+  async function retryRead() {
+    setReadError(false)
+    await refresh()
+  }
+  return { changes, resetWork, save, saveTwo, ready, readError, retryRead }
 }

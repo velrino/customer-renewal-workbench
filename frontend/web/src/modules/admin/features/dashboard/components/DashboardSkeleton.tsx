@@ -1,22 +1,23 @@
-export function DashboardSkeleton() {
+import { Card, CardContent } from '@/shared/ui/card'
+import { Skeleton } from '@/shared/ui/skeleton'
+
+export function MetricSkeleton() {
   return (
-    <div aria-hidden="true" className="fixed inset-0 z-40 flex overflow-hidden bg-background">
-      <div className="hidden w-56 shrink-0 space-y-4 border-r bg-sidebar p-5 md:block">
-        <div className="mb-9 h-8 w-32 rounded bg-muted" />
-        <div className="h-5 w-24 rounded bg-muted" />
-        <div className="h-5 w-32 rounded bg-muted" />
-      </div>
-      <div className="flex-1 space-y-5 p-5">
-        <div className="mb-8 h-8 w-24 rounded bg-muted" />
-        <div className="h-7 w-44 rounded bg-muted" />
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {Array.from({ length: 4 }, (_, index) => (
-            <div key={index} className="h-24 rounded-xl bg-muted" />
-          ))}
-        </div>
-        <div className="h-60 rounded-xl bg-muted" />
-        <div className="h-32 rounded-xl bg-muted" />
-      </div>
+    <Card aria-busy="true">
+      <CardContent className="space-y-3">
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-7 w-1/3" />
+        <Skeleton className="h-3 w-1/2" />
+      </CardContent>
+    </Card>
+  )
+}
+
+export function QueueSkeleton() {
+  return (
+    <div aria-busy="true" className="space-y-4">
+      <Skeleton className="h-9 w-full max-w-sm" />
+      {[0, 1, 2, 3].map(index => <Skeleton key={index} className="h-10 w-full" />)}
     </div>
   )
 }

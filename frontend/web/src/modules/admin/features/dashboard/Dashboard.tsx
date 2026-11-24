@@ -25,6 +25,9 @@ import {
 } from '@/shared/ui/dialog'
 import { Navbar } from '../../layout/WorkbenchNavigation'
 import { accounts, currency, type Account } from '@/shared/renewals/accounts'
+import { Skeleton } from '@/shared/ui/skeleton'
+import { useDashboardLoading } from './useDashboardLoading'
+import { QueueSkeleton } from './components/DashboardSkeleton'
 import { RenewalOverview } from './components/RenewalOverview'
 
 import { AccountDecision } from './components/AccountDecision'
@@ -65,7 +68,12 @@ export function Dashboard() {
   const referenceDay = today()
   const t = useTranslations('dashboard')
   const nav = useTranslations('nav')
-  const { changes, ready, readError, refresh, resetWork, save, saveTwo } = useRenewalWork()
+  const { changes, ready, readError, retryRead, resetWork, save, saveTwo } = useRenewalWork()
+  const loading = useDashboardLoading(ready)
+  function retryDashboard() {
+    loading.restart()
+    return retryRead()
+  }
   useEffect(() => {
     if (readError) toast.error(t('storageError'), { id: 'workbench-read-error', duration: Infinity })
     else toast.dismiss('workbench-read-error')
@@ -361,77 +369,84 @@ export function Dashboard() {
             {nav('dashboard')}
           </h1>
           <div className="flex flex-wrap items-center gap-2">
-            <QuickTour
-              autoStart
-              invitationKey={preferenceKeys.dashboardTour}
-              steps={[
-                {
-                  target: 'renewal-date-range',
-                  title: t('renewalRange'),
-                  explanation: t('tourRange'),
-                },
-                {
-                  target: 'metric-tracked',
-                  title: t('tracked'),
-                  explanation: t('tourAccounts'),
-                },
-                {
-                  target: 'metric-due',
-                  title: t('due'),
-                  explanation: t('tourRenewals'),
-                },
-                {
-                  target: 'metric-capacity',
-                  title: t('capacity'),
-                  explanation: t('tourCapacity'),
-                },
-                {
-                  target: 'review-now',
-                  title: t('attention'),
-                  explanation: t('tourAttention'),
-                },
-                {
-                  target: 'queue-filters',
-                  title: t('queue'),
-                  explanation: t('tourQueue'),
-                },
-              ]}
-            />
-            <DateRangePicker id="renewal-date-range" label={t('renewalRange')} value={range} onChange={setRange} fullRange={portfolioRange} />
+            {loading.complete ? (
+              <>
+                <QuickTour
+                  autoStart
+                  invitationKey={preferenceKeys.dashboardTour}
+                  steps={[
+                    {
+                      target: 'renewal-date-range',
+                      title: t('renewalRange'),
+                      explanation: t('tourRange'),
+                    },
+                    {
+                      target: 'metric-tracked',
+                      title: t('tracked'),
+                      explanation: t('tourAccounts'),
+                    },
+                    {
+                      target: 'metric-due',
+                      title: t('due'),
+                      explanation: t('tourRenewals'),
+                    },
+                    {
+                      target: 'metric-capacity',
+                      title: t('capacity'),
+                      explanation: t('tourCapacity'),
+                    },
+                    {
+                      target: 'review-now',
+                      title: t('attention'),
+                      explanation: t('tourAttention'),
+                    },
+                    {
+                      target: 'queue-filters',
+                      title: t('queue'),
+                      explanation: t('tourQueue'),
+                    },
+                  ]}
+                />
+                <DateRangePicker id="renewal-date-range" label={t('renewalRange')} value={range} onChange={setRange} fullRange={portfolioRange} />
+              </>
+            ) : !readError && <Skeleton className="h-9 w-56" />}
           </div>
         </div>
-        <RenewalOverview
-          onOpenQueue={(label, members, button) => {
-            opener.current = button
-            setModalFilters(emptyFilters)
-            setBarQueue({ label, members })
-          }}
-          onShowUpcoming={() => {
-            const deadline = new Date(renewalDate(renewalWindowDays, referenceDay))
-            setRange({ from: range?.from ?? new Date(referenceDay), to: range && range.to < deadline ? range.to : deadline })
-            update(emptyFilters)
-          }}
-          periodAccounts={periodAccounts}
-          inspect={inspect}
-          changes={changes}
-          choose={(button) => {
-            opener.current = button
-            setChoosing(true)
-          }}
-        />
-        {readError && (
-          <Button variant="outline" onClick={() => void refresh()}>
-            {t('retry')}
-          </Button>
+        {!readError ? (
+          <>
+            {!loading.complete && <span role="status" className="sr-only">{t('unavailable')}</span>}
+            <RenewalOverview
+              isReady={loading.isReady}
+              onOpenQueue={(label, members, button) => {
+                opener.current = button
+                setModalFilters(emptyFilters)
+                setBarQueue({ label, members })
+              }}
+              onShowUpcoming={() => {
+                const deadline = new Date(renewalDate(renewalWindowDays, referenceDay))
+                setRange({ from: range?.from ?? new Date(referenceDay), to: range && range.to < deadline ? range.to : deadline })
+                update(emptyFilters)
+              }}
+              periodAccounts={periodAccounts}
+              inspect={inspect}
+              changes={changes}
+              choose={(button) => {
+                opener.current = button
+                setChoosing(true)
+              }}
+            />
+            <Card id="account-queue" tabIndex={-1}>
+              <CardHeader>
+                <CardTitle>{t('queue')}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {loading.isReady('queue') ? renderQueueView(periodAccounts) : <QueueSkeleton />}
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <Button variant="outline" onClick={() => void retryDashboard()}>{t('retry')}</Button>
         )}
-        <Card id="account-queue" tabIndex={-1}>
-          <CardHeader>
-            <CardTitle>{t('queue')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {renderQueueView(periodAccounts)}
-          </CardContent>
-        </Card>
         <Dialog
           open={choosing || account !== null || barQueue !== null}
           onOpenChange={(open) => {
@@ -533,7 +548,7 @@ export function Dashboard() {
                     save={save}
                     ready={ready}
                     readError={readError}
-                    retry={refresh}
+                    retry={retryDashboard}
                     used={allocated.length}
                   />
                 </>

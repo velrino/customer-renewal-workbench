@@ -1,3 +1,6 @@
+import type { DashboardSection } from '../useDashboardLoading'
+import { Skeleton } from '@/shared/ui/skeleton'
+import { MetricSkeleton } from './DashboardSkeleton'
 import { useId, useSyncExternalStore } from 'react'
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
@@ -43,6 +46,7 @@ const metricsKey = storageKey('widgets', 'dashboard-metrics')
 const timelineKey = storageKey('charts', 'renewal-timeline')
 
 export function RenewalOverview({
+  isReady,
   onOpenQueue,
   onShowUpcoming,
   periodAccounts,
@@ -50,6 +54,7 @@ export function RenewalOverview({
   choose,
   changes,
 }: {
+  isReady: (section: DashboardSection) => boolean
   onOpenQueue: OpenTimelineQueue
   onShowUpcoming: () => void
   periodAccounts: Account[]
@@ -113,7 +118,7 @@ export function RenewalOverview({
       }}>
         <SortableContext items={orderedKeys} strategy={rectSortingStrategy}>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {orderedMetrics.map(({ key, note, value, icon: Icon }) => (
+            {orderedMetrics.map(({ key, note, value, icon: Icon }) => !isReady(key) ? <MetricSkeleton key={key} /> : (
               <SortableMetric key={key} id={key} label={t('moveMetric', { name: t(key) })}>
                 <CardHeader className="flex items-center justify-between pe-9">
                   <CardTitle className="text-sm font-medium">
@@ -196,7 +201,7 @@ export function RenewalOverview({
             {periodAccounts.length > 0 && <CardDescription>{t('calendarHint')}</CardDescription>}
           </CardHeader>
           <CardContent id="renewal-timeline">
-            <RenewalTimeline onOpenQueue={onOpenQueue} interval={timeline.prefs.interval} onIntervalChange={interval => timeline.update({ interval })} accounts={periodAccounts} referenceDay={referenceDay} />
+            {!isReady('timeline') ? <Skeleton className="h-72 w-full" /> : <RenewalTimeline onOpenQueue={onOpenQueue} interval={timeline.prefs.interval} onIntervalChange={interval => timeline.update({ interval })} accounts={periodAccounts} referenceDay={referenceDay} />}
           </CardContent>
         </Card>
         <Card id="review-now" className={expanded ? 'lg:col-span-full' : 'lg:col-span-3'}>
@@ -205,31 +210,35 @@ export function RenewalOverview({
             <CardDescription>{t('attentionHint')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-1">
-            {periodAccounts.filter((a) => attention(a, changes[a.id]) === 'review')
-              .length === 0 && (
-              <p className="text-sm text-muted-foreground">{t('noReview')}</p>
+            {!isReady('attention') ? <Skeleton className="h-40 w-full" /> : (
+              <>
+                {periodAccounts.filter((a) => attention(a, changes[a.id]) === 'review')
+                  .length === 0 && (
+                  <p className="text-sm text-muted-foreground">{t('noReview')}</p>
+                )}
+                {periodAccounts
+                  .filter((a) => attention(a, changes[a.id]) === 'review')
+                  .map((a) => (
+                    <button
+                      key={a.id}
+                      className="flex w-full items-center gap-3 rounded-md py-2 text-left hover:bg-accent"
+                      onClick={(e) => inspect(a, e.currentTarget)}
+                    >
+                      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-xs font-semibold">
+                        {a.name.slice(0, 2).toUpperCase()}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <strong className="block text-sm">{a.name}</strong>
+                        <span className="block text-xs text-muted-foreground">
+                          <RelativeDate date={renewalDate(a.days, referenceDay)} referenceDay={referenceDay} /> ·{' '}
+                          {t('signals.' + evidenceKey(a, changes[a.id]))}
+                        </span>
+                      </span>
+                      <ChevronRight className="size-4 text-muted-foreground" />
+                    </button>
+                  ))}
+              </>
             )}
-            {periodAccounts
-              .filter((a) => attention(a, changes[a.id]) === 'review')
-              .map((a) => (
-                <button
-                  key={a.id}
-                  className="flex w-full items-center gap-3 rounded-md py-2 text-left hover:bg-accent"
-                  onClick={(e) => inspect(a, e.currentTarget)}
-                >
-                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-xs font-semibold">
-                    {a.name.slice(0, 2).toUpperCase()}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <strong className="block text-sm">{a.name}</strong>
-                    <span className="block text-xs text-muted-foreground">
-                      <RelativeDate date={renewalDate(a.days, referenceDay)} referenceDay={referenceDay} /> ·{' '}
-                      {t('signals.' + evidenceKey(a, changes[a.id]))}
-                    </span>
-                  </span>
-                  <ChevronRight className="size-4 text-muted-foreground" />
-                </button>
-              ))}
           </CardContent>
         </Card>
       </div>
