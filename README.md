@@ -21,7 +21,7 @@ Open the [local dashboard](http://127.0.0.1:3000/). The [frontend guide](fronten
 
 The static Next.js dashboard offers two persistence modes. **Local** stores work in the current browser’s IndexedDB. **Shared API** sends writes to Go on Cloud Run and listens directly to Firestore for updates. The arrows show the ownership of each write and the return path for a saved decision.
 
-[![Runtime architecture with the browser, Go API, Firestore and optional telemetry](docs/ARCHITECTURE/architecture-icons.png)](docs/ARCHITECTURE/architecture-icons.png)
+[![Runtime architecture with the browser, Go API, Firestore and telemetry](docs/ARCHITECTURE/architecture-icons.png)](docs/ARCHITECTURE/architecture-icons.png)
 
 [Editable Excalidraw source](docs/ARCHITECTURE/architecture-icons.excalidraw)
 
