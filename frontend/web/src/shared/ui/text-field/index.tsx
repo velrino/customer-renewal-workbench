@@ -21,8 +21,12 @@ export function TextField({
   const countId = useId()
   const t = useTranslations('textField')
   const multiline = type === 'textarea'
+  const count = Array.from(value).length
+  function change(next: string) {
+    onValueChange(Array.from(next).slice(0, maxLength).join(''))
+  }
   const control = {
-    ...props, value, maxLength,
+    ...props, value,
     'aria-describedby': [description, countId].filter(Boolean).join(' '),
     className: cn(
       'block w-full rounded-md border bg-background px-3 py-2 text-sm',
@@ -34,17 +38,17 @@ export function TextField({
   return (
     <span className="relative block">
       {multiline ? (
-        <textarea {...control} onChange={event => onValueChange(event.target.value)} />
+        <textarea {...control} onChange={event => change(event.target.value)} />
       ) : (
-        <input {...control} type={type} onChange={event => onValueChange(event.target.value)} />
+        <input {...control} type={type} onChange={event => change(event.target.value)} />
       )}
       <span aria-hidden="true" className={cn(
         'pointer-events-none absolute bottom-1 end-2 text-[10px] leading-none tabular-nums text-muted-foreground',
         multiline && 'end-4',
       )}>
-        {value.length}/{maxLength}
+        {count}/{maxLength}
       </span>
-      <span hidden id={countId}>{t('count', { current: value.length, total: maxLength })}</span>
+      <span hidden id={countId}>{t('count', { current: count, total: maxLength })}</span>
     </span>
   )
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createRecordStore } from '@/shared/storage/indexed-db'
 import type { Account } from '../accounts'
 import {
@@ -8,12 +8,24 @@ import {
   type Changes,
   type Plan,
   type Command,
+  type Failure,
 } from '../workflow'
 
 const databaseName = 'renewal-workbench-week-v1'
 const records = createRecordStore<AccountWork>(databaseName, 'accounts')
 
 export type AccountCommand = { account: Account; revision: number; command: Command }
+
+export interface RenewalWork {
+  changes: Changes
+  ready: boolean
+  readError: boolean
+  waitingFor: (id: string) => boolean
+  retryRead: () => Promise<void>
+  resetWork: () => Promise<void>
+  save: (account: Account, revision: number, command: Command) => Promise<void>
+  saveTwo: (commands: AccountCommand[]) => Promise<{ id: string; ok: boolean; reason?: Failure }[]>
+}
 
 // A practice run uses the same commands as Local, with records scoped to this mount.
 function createPracticeStore(): Pick<typeof records, 'readAll' | 'update'> {
@@ -38,6 +50,14 @@ export async function keepDemoPlan(account: Account, plan: Plan) {
     return applyCommand({ ...current, [account.id]: active }, account, active.revision, { type: 'complete' })
   })
   notifyLocalTabs()
+  requestLocalPersistence()
+}
+
+let persistenceRequested = false
+function requestLocalPersistence() {
+  if (persistenceRequested || !navigator.storage?.persist) return
+  persistenceRequested = true
+  void navigator.storage.persist().catch(() => {})
 }
 
 function notifyLocalTabs() {
@@ -54,8 +74,9 @@ function notifyLocalTabs() {
   }
 }
 
-export function useRenewalWork(practice = false) {
-  const store = useMemo(() => practice ? createPracticeStore() : records, [practice])
+export function useRenewalWork(practice = false): RenewalWork {
+  const [practiceStore] = useState(createPracticeStore)
+  const store = practice ? practiceStore : records
   function saveCommand({ account, revision, command }: AccountCommand) {
     return store.update(current => applyCommand(current, account, revision, command))
   }
@@ -106,6 +127,7 @@ export function useRenewalWork(practice = false) {
       throw error
     }
     publish()
+    if (!practice) requestLocalPersistence()
   }
   async function saveTwo(
     commands: AccountCommand[],
@@ -114,6 +136,7 @@ export function useRenewalWork(practice = false) {
       commands.map(saveCommand),
     )
     publish()
+    if (!practice && settled.some(result => result.status === 'fulfilled')) requestLocalPersistence()
     await refresh()
     return settled.map((result, index) => ({
       id: commands[index].account.id,
@@ -136,5 +159,5 @@ export function useRenewalWork(practice = false) {
     setReadError(false)
     await refresh()
   }
-  return { changes, resetWork, save, saveTwo, ready, readError, retryRead }
+  return { waitingFor: (_id: string) => false, changes, resetWork, save, saveTwo, ready, readError, retryRead }
 }

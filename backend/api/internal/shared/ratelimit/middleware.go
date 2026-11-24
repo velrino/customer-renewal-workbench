@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"net"
 	"net/http"
+	"net/netip"
 	"strconv"
+	"strings"
 	"time"
 
 	limiter "github.com/ninepeach/go-ratelimit"
@@ -16,6 +18,7 @@ import (
 type PerMinute struct {
 	PerPeer     int
 	PerInstance int
+	TrustedHops int
 }
 
 // Wrap creates independent buckets for this group of routes. Build it once at
@@ -36,10 +39,7 @@ func (p PerMinute) Wrap(next http.Handler) http.Handler {
 		panic(err)
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		host, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			host = r.RemoteAddr
-		}
+		host := peerAddress(r, p.TrustedHops)
 		result, err := buckets.Allow(r.Context(), peer.Rule(host), instance.Rule("all"))
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
@@ -62,4 +62,27 @@ func WriteRetryAfter(w http.ResponseWriter, delay time.Duration) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusTooManyRequests)
 	_ = json.NewEncoder(w).Encode(map[string]string{"reason": "rateLimited"})
+}
+
+func peerAddress(r *http.Request, trustedHops int) string {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		host = r.RemoteAddr
+	}
+	if trustedHops > 0 {
+		hops := strings.Split(strings.Join(r.Header.Values("X-Forwarded-For"), ","), ",")
+		if index := len(hops) - trustedHops; index >= 0 {
+			if addr, err := netip.ParseAddr(strings.TrimSpace(hops[index])); err == nil && addr.Zone() == "" {
+				host = addr.String()
+			}
+		}
+	}
+	if addr, err := netip.ParseAddr(host); err == nil {
+		addr = addr.Unmap()
+		if addr.Is6() {
+			return netip.PrefixFrom(addr, 64).Masked().String()
+		}
+		return addr.String()
+	}
+	return host
 }

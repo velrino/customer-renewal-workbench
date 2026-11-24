@@ -22,6 +22,8 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter renewal-workbench-web lint
+      - run: pnpm audit --prod
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build

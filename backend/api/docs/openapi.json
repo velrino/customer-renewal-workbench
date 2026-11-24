@@ -43,6 +43,25 @@
                 }
               }
             }
+          },
+          "429": {
+            "description": "Read quota exhausted. Retry after the indicated number of seconds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteError"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until another attempt is allowed.",
+                "schema": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
           }
         }
       }
@@ -216,6 +235,16 @@
           },
           "429": {
             "$ref": "#/components/responses/WriteRateLimited"
+          },
+          "403": {
+            "description": "Browser origin is outside the configured allow-list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteError"
+                }
+              }
+            }
           }
         },
         "parameters": [
@@ -272,6 +301,16 @@
           },
           "429": {
             "$ref": "#/components/responses/WriteRateLimited"
+          },
+          "403": {
+            "description": "Browser origin is outside the configured allow-list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteError"
+                }
+              }
+            }
           }
         }
       }
@@ -620,7 +659,12 @@
               "invalidCommand",
               "storage",
               "rateLimited",
-              "rateLimitUnavailable"
+              "rateLimitUnavailable",
+              "invalidOrigin",
+              "ownerTooLong",
+              "questionTooLong",
+              "invalidText",
+              "notApplicable"
             ]
           }
         },

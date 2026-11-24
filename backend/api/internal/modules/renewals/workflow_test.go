@@ -1,7 +1,9 @@
 package renewals
 
 import (
+	"encoding/json"
 	"errors"
+	"os"
 	"testing"
 	"time"
 )
@@ -104,5 +106,37 @@ func TestResetCooldownExpiry(t *testing.T) {
 		if err := board.reset(beforeExpiry); err != resetCooldownRemaining(time.Second) {
 			t.Fatalf("reset cooldown: %v", err)
 		}
+	}
+}
+
+func TestCommandConformance(t *testing.T) {
+	data, err := os.ReadFile("testdata/conformance.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cases []struct {
+		Name, Account, Reason string
+		Command               Command
+		Occupied              []string
+	}
+	if err := json.Unmarshal(data, &cases); err != nil {
+		t.Fatal(err)
+	}
+	zone, err := time.LoadLocation("America/Santiago")
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 8, 30, 0, 30, 0, 0, zone)
+	for _, tc := range cases {
+		t.Run(tc.Name, func(t *testing.T) {
+			board := Board{Changes: map[string]Account{}}
+			for _, id := range tc.Occupied {
+				board.Changes[id] = Account{Plan: &Plan{Status: "active"}}
+			}
+			err := board.apply(tc.Account, 0, tc.Command, now)
+			if tc.Reason == "" && err != nil || tc.Reason != "" && (err == nil || err.Error() != tc.Reason) {
+				t.Fatalf("got %v, want %q", err, tc.Reason)
+			}
+		})
 	}
 }

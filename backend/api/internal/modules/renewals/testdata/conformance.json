@@ -1,0 +1,130 @@
+[
+  {
+    "name": "Santiago midnight transition",
+    "account": "ember",
+    "command": {
+      "type": "plan",
+      "action": "budget",
+      "owner": "Demo",
+      "followUp": "2026-09-06"
+    },
+    "reason": "",
+    "occupied": []
+  },
+  {
+    "name": "after renewal",
+    "account": "ember",
+    "command": {
+      "type": "plan",
+      "action": "budget",
+      "owner": "Demo",
+      "followUp": "2026-09-07"
+    },
+    "reason": "invalidDate",
+    "occupied": []
+  },
+  {
+    "name": "invalid action",
+    "account": "ember",
+    "command": {
+      "type": "plan",
+      "action": "undefined",
+      "owner": "Demo",
+      "followUp": "2026-09-06"
+    },
+    "reason": "invalidAction",
+    "occupied": []
+  },
+  {
+    "name": "80 Unicode characters",
+    "account": "ember",
+    "command": {
+      "type": "plan",
+      "action": "budget",
+      "owner": "🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟",
+      "followUp": "2026-09-06"
+    },
+    "reason": "",
+    "occupied": []
+  },
+  {
+    "name": "81 Unicode characters",
+    "account": "ember",
+    "command": {
+      "type": "plan",
+      "action": "budget",
+      "owner": "🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟",
+      "followUp": "2026-09-06"
+    },
+    "reason": "ownerTooLong",
+    "occupied": []
+  },
+  {
+    "name": "overlong question",
+    "account": "ember",
+    "command": {
+      "type": "information",
+      "question": "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
+    },
+    "reason": "questionTooLong",
+    "occupied": []
+  },
+  {
+    "name": "format control",
+    "account": "ember",
+    "command": {
+      "type": "plan",
+      "action": "budget",
+      "owner": "A‮B",
+      "followUp": "2026-09-06"
+    },
+    "reason": "invalidText",
+    "occupied": []
+  },
+  {
+    "name": "permitted joiner",
+    "account": "ember",
+    "command": {
+      "type": "plan",
+      "action": "budget",
+      "owner": "👩‍💻",
+      "followUp": "2026-09-06"
+    },
+    "reason": "",
+    "occupied": []
+  },
+  {
+    "name": "inapplicable resolution",
+    "account": "ember",
+    "command": {
+      "type": "resolve"
+    },
+    "reason": "notApplicable",
+    "occupied": []
+  },
+  {
+    "name": "full board",
+    "account": "drift",
+    "command": {
+      "type": "plan",
+      "action": "budget",
+      "owner": "Demo",
+      "followUp": "2026-09-06"
+    },
+    "reason": "full",
+    "occupied": [
+      "ember",
+      "cove"
+    ]
+  },
+  {
+    "name": "multiline information request",
+    "account": "drift",
+    "command": {
+      "type": "information",
+      "question": "First line\nSecond line"
+    },
+    "reason": "",
+    "occupied": []
+  }
+]

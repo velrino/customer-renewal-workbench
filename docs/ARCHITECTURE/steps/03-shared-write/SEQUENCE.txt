@@ -51,3 +51,4 @@ sequenceDiagram
         create participant T as Reviewer B
         D-->>T: Updated snapshot<br/>via active listener
     end
+    Note over B: Enable the next action for this account after its revision advances.

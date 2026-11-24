@@ -38,8 +38,12 @@ export function subscribeToStorage(refresh: () => void) {
 }
 
 export function clearWorkbenchPreferences() {
-  for (const key of Object.keys(localStorage)) {
-    if (key.startsWith(appPrefix + ':')) localStorage.removeItem(key)
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith(appPrefix + ':')) localStorage.removeItem(key)
+    }
+  } catch {
+    // IndexedDB has already reset. Restricted storage can only clear this tab's preferences.
   }
   unsaved.clear()
   window.dispatchEvent(new Event('workbench-storage-change'))

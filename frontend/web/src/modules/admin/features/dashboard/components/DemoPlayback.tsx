@@ -1,3 +1,4 @@
+import { accounts } from '@/shared/renewals/accounts'
 import { useEffect, useEffectEvent, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
@@ -141,7 +142,7 @@ export function DemoPlayback({ onStop, onFinish }: { onStop: () => void; onFinis
       {point && <MousePointer2 aria-hidden="true" className="pointer-events-none fixed left-0 top-0 z-[90] size-7 fill-primary text-background drop-shadow motion-safe:transition-transform motion-safe:duration-300"
         style={{ transform: `translate(${point.x}px, ${point.y}px)` }} />}
       <div className="pointer-events-auto fixed inset-x-3 bottom-3 z-[90] mx-auto flex max-w-lg items-center gap-3 rounded-xl border bg-popover p-3 text-popover-foreground shadow-lg">
-        <p role="status" className="flex-1 text-sm">{t(caption)}</p>
+        <p role="status" className="flex-1 text-sm">{t(caption, { days: accounts.find(a => a.id === 'ember')!.days })}</p>
         <Button data-demo-stop aria-keyshortcuts="Escape" size="sm" variant="outline" onClick={onStop}>{t('stop')}</Button>
       </div>
     </>, document.body)

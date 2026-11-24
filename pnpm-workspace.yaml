@@ -1,3 +1,6 @@
 packages:
   - frontend/*
   - backend/*
+
+overrides:
+  '@firebase/firestore>@grpc/grpc-js': 1.13.7

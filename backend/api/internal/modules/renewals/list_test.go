@@ -17,7 +17,7 @@ func TestListRenewals(t *testing.T) {
 	Register(mux, func(context.Context) (Board, error) {
 		reads++
 		return Board{Changes: map[string]Account{"cove": {Revision: 8, IssueResolved: true, Plan: &Plan{Owner: "CS"}}}}, nil
-	}, nil)
+	}, nil, 0, nil)
 	list := func(query string) renewalPage {
 		t.Helper()
 		w := httptest.NewRecorder()
@@ -70,7 +70,7 @@ func TestListQuotaPrecedesStorageAndIsIndependentOfReset(t *testing.T) {
 		Register(mux, func(context.Context) (Board, error) {
 			reads++
 			return Board{}, nil
-		}, func(context.Context, func(*Board) error) error { return nil })
+		}, func(context.Context, bool, func(*Board) error) error { return nil }, 0, nil)
 		for i := 0; i <= 60; i++ {
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, httptest.NewRequest("GET", "/workbench/accounts", nil))
@@ -90,7 +90,7 @@ func TestListUnavailableBoard(t *testing.T) {
 	mux := http.NewServeMux()
 	Register(mux, func(context.Context) (Board, error) {
 		return Board{}, errors.New("read unavailable")
-	}, nil)
+	}, nil, 0, nil)
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, httptest.NewRequest("GET", "/workbench/accounts", nil))
 	if w.Code != http.StatusServiceUnavailable || w.Body.String() != "{\"reason\":\"storage\"}\n" {

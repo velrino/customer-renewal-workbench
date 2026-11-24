@@ -6,7 +6,6 @@ import {
   attention,
   committed,
   planningCoverage,
-  signalsConflict,
   renewalDate,
   suggestedAction,
   type Changes,
@@ -34,7 +33,6 @@ test('missing adoption stays unknown', () => {
 })
 
 test('Cove conflicts and Atlas does not take a slot by value', () => {
-  assert.equal(signalsConflict(cove), true)
   assert.equal(attention(cove), 'review')
   assert.equal(atlas.value > cove.value, true)
   assert.equal(attention(atlas), 'steady')
@@ -94,7 +92,6 @@ test('resolving Cove moves attention to monitoring and keeps the follow-up', () 
   assert.equal(resolved.issueResolved, true)
   assert.equal(resolved.plan?.followUp, renewalDate(2))
   assert.equal(attention(cove, resolved), 'monitor')
-  assert.equal(signalsConflict(cove, resolved), false)
   const completed = applyCommand({ cove: resolved }, cove, resolved.revision, { type: 'complete' })
   assert.equal(completed.plan?.status, 'completed')
   assert.equal(committed({ cove: completed }).length, 0)
@@ -140,4 +137,17 @@ test('editing an active plan keeps its original evidence and timestamp until a n
   const fresh = applyCommand({ cove: completed }, cove, completed.revision, command)
   assert.equal(fresh.plan?.evidence, 'coveResolved')
   assert.notEqual(fresh.plan?.savedAt, originalTime)
+})
+
+test('local commands conform to the shared API scenarios', async () => {
+  const {readFile} = await import('node:fs/promises')
+  const cases = JSON.parse(await readFile(new URL('../../../../../../backend/api/internal/modules/renewals/testdata/conformance.json', import.meta.url), 'utf8'))
+  for (const scenario of cases) {
+    const changes: Changes = {}
+    for (const id of scenario.occupied) changes[id] = plan(accounts.find(a => a.id === id)!)
+    const account = accounts.find(a => a.id === scenario.account)!
+    const run = () => applyCommand(changes, account, 0, scenario.command, '2026-08-30')
+    if (scenario.reason) assert.throws(run, {reason: scenario.reason}, scenario.name)
+    else assert.doesNotThrow(run, scenario.name)
+  }
 })

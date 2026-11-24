@@ -4,8 +4,12 @@ package observability
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"runtime"
+	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -43,12 +47,14 @@ func New(dsn, environment, release string) Reporter {
 
 func (r Reporter) HTTP(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
 		hub := r.hub.Clone()
 		defer func() {
 			if value := recover(); value != nil {
 				if value == http.ErrAbortHandler {
 					panic(value)
 				}
+				slog.Error("HTTP handler panicked", "panic_type", fmt.Sprintf("%T", value), "stack", stackFunctions())
 				hub.Recover(errors.New("HTTP handler panicked"))
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			}
@@ -60,6 +66,7 @@ func (r Reporter) HTTP(next http.Handler) http.Handler {
 // FirestoreCheck runs at refresh time, including in the health worker goroutine.
 // Cached 503 responses share the original failure report.
 func (r Reporter) FirestoreCheck(check func(context.Context) error) func(context.Context) (time.Duration, error) {
+	var failing atomic.Bool
 	return func(ctx context.Context) (elapsed time.Duration, err error) {
 		start := time.Now()
 		defer func() {
@@ -72,11 +79,28 @@ func (r Reporter) FirestoreCheck(check func(context.Context) error) func(context
 		err = check(ctx)
 		// Stop the probe timer before synchronous event delivery.
 		elapsed = time.Since(start)
-		if err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, firestore.ErrNotConfigured) {
+		if err == nil {
+			failing.Store(false)
+		}
+		if err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, firestore.ErrNotConfigured) && !failing.Swap(true) {
 			hub := r.hub.Clone()
 			hub.Scope().SetTag("grpc.code", status.Code(err).String())
 			hub.CaptureException(errors.New("Firestore metadata lookup failed"))
 		}
 		return elapsed, err
 	}
+}
+
+func stackFunctions() string {
+	var pcs [40]uintptr
+	frames := runtime.CallersFrames(pcs[:runtime.Callers(2, pcs[:])])
+	var names []string
+	for {
+		frame, more := frames.Next()
+		names = append(names, fmt.Sprintf("%s:%d", frame.Function, frame.Line))
+		if !more {
+			break
+		}
+	}
+	return strings.Join(names, "\n")
 }

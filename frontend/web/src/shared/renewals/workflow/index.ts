@@ -1,4 +1,4 @@
-import { accounts, type Account } from '../accounts/index.ts'
+import { accounts, renewalWindowDays, type Account } from '../accounts/index.ts'
 
 export function today() {
   const now = new Date()
@@ -11,7 +11,7 @@ export function today() {
 export const capacity = 2
 export const budgetHorizonDays = 14
 export const adoptionDropPoints = 30
-export const renewalWindowDays = 30
+export { renewalWindowDays }
 export const actions = [
   'resolveIssue',
   'budget',
@@ -65,16 +65,6 @@ export function attention(a: Account, work?: AccountWork): Attention {
   return 'steady'
 }
 
-export function signalsConflict(a: Account, work?: AccountWork) {
-  return Boolean(
-    a.critical &&
-      !work?.issueResolved &&
-      a.sponsor === 'positive' &&
-      a.adoption != null &&
-      a.adoption >= 0.5,
-  )
-}
-
 export function evidenceKey(a: Account, work?: AccountWork) {
   return a.id === 'cove' && work?.issueResolved ? 'coveResolved' : a.id
 }
@@ -118,14 +108,21 @@ export function planningCoverage(changes: Changes, portfolio = accounts) {
   return { ready, denominator }
 }
 
-export type Failure =
-  | 'ownerRequired'
-  | 'invalidDate'
-  | 'questionRequired'
-  | 'full'
-  | 'changed'
-  | 'rateLimited'
-  | 'storage'
+export const failureReasons = [
+  'ownerRequired',
+  'ownerTooLong',
+  'questionTooLong',
+  'invalidText',
+  'invalidAction',
+  'notApplicable',
+  'invalidDate',
+  'questionRequired',
+  'full',
+  'changed',
+  'rateLimited',
+  'storage',
+] as const
+export type Failure = (typeof failureReasons)[number]
 export class WorkflowError extends Error {
   readonly reason: Failure
   readonly retryAfterSeconds?: number
@@ -137,19 +134,28 @@ export class WorkflowError extends Error {
   }
 }
 
+function validateText(raw: string, limit: number, missing: Failure, tooLong: Failure) {
+  const checked = missing === 'questionRequired' ? raw.replace(/\r?\n/gu, '') : raw
+  if (/[\p{Cc}\p{Cf}]/u.test(checked.replace(/[\u200c\u200d]/gu, ''))) throw new WorkflowError('invalidText')
+  const value = raw.trim()
+  if (!value) throw new WorkflowError(missing)
+  if ([...value].length > limit) throw new WorkflowError(tooLong)
+}
+
 export function applyCommand(
   changes: Changes,
   a: Account,
   revision: number,
   command: Command,
+  referenceDay = today(),
 ): AccountWork {
   const previous = changes[a.id]
   if ((previous?.revision ?? 0) !== revision) throw new WorkflowError('changed')
   const work = { ...previous, id: a.id, revision: revision + 1 }
   switch (command.type) {
     case 'plan': {
-      if (!command.owner.trim()) throw new WorkflowError('ownerRequired')
-      const referenceDay = today()
+      validateText(command.owner, 80, 'ownerRequired', 'ownerTooLong')
+      if (!actions.includes(command.action)) throw new WorkflowError('invalidAction')
       const date = new Date(command.followUp + 'T00:00:00Z')
       if (
         !Number.isFinite(date.getTime()) ||
@@ -175,11 +181,12 @@ export function applyCommand(
       break
     }
     case 'information':
-      if (!command.question.trim()) throw new WorkflowError('questionRequired')
+      validateText(command.question, 400, 'questionRequired', 'questionTooLong')
       work.information = command.question.trim()
       break
     case 'resolve':
-      if (!a.critical || work.issueResolved) throw new WorkflowError('changed')
+      if (!a.critical) throw new WorkflowError('notApplicable')
+      if (work.issueResolved) throw new WorkflowError('changed')
       work.issueResolved = true
       break
     case 'complete':

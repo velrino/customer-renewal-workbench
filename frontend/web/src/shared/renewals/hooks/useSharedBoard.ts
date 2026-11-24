@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { Changes } from '../workflow'
 
 type BoardSnapshot = {
@@ -48,9 +48,9 @@ export function useSharedBoard(enabled: boolean) {
     }
   }, [enabled, attempt])
 
-  async function retryRead() {
+  const retryRead = useCallback(async () => {
     setAttempt(previous => previous + 1)
-  }
+  }, [])
 
   return { ...board, retryRead }
 }

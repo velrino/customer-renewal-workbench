@@ -48,6 +48,6 @@ sequenceDiagram
         B->>D: Listen to workbenches/shared
         D-->>B: Current board and later snapshots
     else Local selected or API unavailable
-        B->>B: Use this profile’s IndexedDB portfolio
+        B->>B: Show Local and use this profile’s IndexedDB portfolio
     end
     Note over B,A: An open account or reset dialog stays attached to its original environment.

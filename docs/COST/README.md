@@ -24,3 +24,17 @@
 - **Static hosting.** Assume five CDN requests and 0.5 MB of assets per reviewer per month. At 100,000 reviewers that is 500,000 requests and 50 GB. Each total includes one hosting choice, with usage within that plan’s allowance. [Vercel pricing](https://vercel.com/pricing) · [GitHub Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits)
 
 [Delivered and at scale](../PLANS/0-START/plan.svg) · [Project README](../../README.md#monthly-costs)
+
+### Controls for the public demo
+
+The master deployment caps the Cloud Run service and each revision at two instances. Direct Firestore listeners are billed independently. Each committed board change can generate a read for every connected listener. Check Firestore usage and configure a project-scoped Cloud Billing budget with the project owner’s amount and notification recipients. An alerts-only budget sends notifications when thresholds are crossed. [Cloud Billing budgets](https://cloud.google.com/billing/docs/how-to/budgets)
+
+For App Check, register the web app and its dashboard domains with reCAPTCHA Enterprise. Build the dashboard with `NEXT_PUBLIC_APP_CHECK_SITE_KEY`, `NEXT_PUBLIC_FIREBASE_APP_ID` and `NEXT_PUBLIC_FIREBASE_API_KEY`. Check valid requests in Firebase before enabling Firestore enforcement. Emulator builds skip attestation. Review allowed origins and disable shared reads when retiring the demo. [Firebase App Check](https://firebase.google.com/docs/app-check)
+
+Use the billing account’s currency for `BUDGET_AMOUNT` (for example, `10USD`). Set the amount agreed with the project owner. For a new project budget, run this once and verify its recipients in Cloud Billing. Edit the existing budget for subsequent changes.
+
+```sh
+gcloud billing budgets create --billing-account="$BILLING_ACCOUNT_ID" \
+  --display-name="Customer Renewal Workbench" --filter-projects="projects/$PROJECT_NUMBER" \
+  --budget-amount="$BUDGET_AMOUNT" --threshold-rule=percent=0.5 --threshold-rule=percent=0.9 --threshold-rule=percent=1
+```

@@ -1,11 +1,13 @@
 package observability_test
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -44,7 +46,7 @@ func TestErrorDelivery(t *testing.T) {
 	dsn := strings.Replace(ingest.URL, "http://", "http://test@", 1) + "/1"
 	reporter := observability.New(dsn, "test", "test-revision")
 	check := reporter.FirestoreCheck(func(context.Context) error { return errors.New("private-diagnostic") })
-	routes := reporter.HTTP(app.Routes("test", check))
+	routes := reporter.HTTP(app.Routes("test", check, 0))
 	var lookupTime int64
 	for i := range 2 {
 		w := httptest.NewRecorder()
@@ -104,4 +106,17 @@ func TestErrorDelivery(t *testing.T) {
 		t.Fatal("expected a failed probe")
 	}
 	assertEvent("Firestore health check panicked")
+}
+
+func TestPanicLogWithoutDSN(t *testing.T) {
+	var output bytes.Buffer
+	previous := slog.Default()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&output, nil)))
+	t.Cleanup(func() { slog.SetDefault(previous) })
+	handler := observability.New("", "test", "").HTTP(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("private-panic") }))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest("GET", "/private-path?private-query", nil))
+	if response.Code != 500 || !strings.Contains(output.String(), "TestPanicLogWithoutDSN") || strings.Contains(output.String(), "private-") {
+		t.Fatalf("unexpected panic diagnostic: status %d", response.Code)
+	}
 }
