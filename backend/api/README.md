@@ -61,6 +61,8 @@ The health check has its own cache. On Cloud Run it reads database metadata. Wit
 
 ## Production setup
 
+Backend CI tests changes under `backend/api/` and changes to its workflow. After those changes reach `master`, GitHub Actions uses Workload Identity Federation to push the image to Artifact Registry and update `renewal-api` in `us-central1`. The deploy compares the public OpenAPI document with the committed file and reads the first page of renewals.
+
 - **Database and identity.** Cloud Run and the native Firestore database `(default)` run in Iowa. Grant the attached runtime identity `datastore.databases.getMetadata`, `datastore.databases.get`, and `datastore.entities.get`, `datastore.entities.create`, `datastore.entities.update` on the target database. [Firestore IAM permissions](https://firebase.google.com/docs/firestore/security/iam)
 - **Frontend configuration.** Build the frontend with the matching `NEXT_PUBLIC_FIRESTORE_PROJECT_ID` and `NEXT_PUBLIC_API_ORIGIN`. For a named database, match `FIRESTORE_DATABASE` on the API with `NEXT_PUBLIC_FIRESTORE_DATABASE` in the frontend build and the database in [firebase.json](../../infra/firebase/firebase.json).
 - **Access rules.** Deploy the rules before enabling the frontend. They allow public reads of the single synthetic board document and deny browser writes and document listing. From the repository root, run `firebase deploy --only firestore:rules --config infra/firebase/firebase.json --project customer-renewal-workbench`. [Firestore rules](../../infra/firebase/firestore.rules)
