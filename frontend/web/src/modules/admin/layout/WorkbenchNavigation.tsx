@@ -59,7 +59,7 @@ export function Navigation() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip={t('dashboard')} aria-label={t('dashboard')} aria-current="page" isActive asChild>
-                  <Link href="/dashboard" onClick={() => setOpenMobile(false)}>
+                  <Link href="/" onClick={() => setOpenMobile(false)}>
                     <LayoutDashboard />
                     <span>{t('dashboard')}</span>
                   </Link>

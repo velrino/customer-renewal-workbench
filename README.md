@@ -4,7 +4,7 @@
 
 This Hacker Eval prototype uses six fictional B2B software accounts. The buyer is the head of Customer Success. The app simulates the account owner’s follow-through.
 
-**Try the prototype** — [Open the dashboard](https://customer-renewal-workbench.vercel.app/dashboard) or [open the account queue](https://customer-renewal-workbench.vercel.app/dashboard#account-queue). Start with a fresh browser profile for the original six cases. Changes are saved in this browser and survive a reload. Open an account from the queue. The Accounts card on the dashboard also opens the same detail.
+**Try the prototype** — [Open the dashboard](https://customer-renewal-workbench.vercel.app/) or [open the account queue](https://customer-renewal-workbench.vercel.app/#account-queue). Start with a fresh browser profile for the original six cases. Changes are saved in this browser and survive a reload. Open an account from the queue. The Accounts card on the dashboard also opens the same detail.
 
 [Editable project plan](docs/PLANS/0-START/plan.excalidraw) · [Estimated monthly costs by user count](docs/COST/README.md)
 
@@ -39,7 +39,7 @@ Cove illustrates three distinct things the interface should show together:
 
 ## Reviewer walkthrough and acceptance checks
 
-Open the [public dashboard](https://customer-renewal-workbench.vercel.app/dashboard) in a fresh browser profile, or start the frontend locally using the setup below. Skip or finish the quick tour, then scroll to the account queue on the dashboard. The names below are the labels on the screen.
+Open the [public dashboard](https://customer-renewal-workbench.vercel.app/) in a fresh browser profile, or start the frontend locally using the setup below. Skip or finish the quick tour, then scroll to the account queue on the dashboard. The names below are the labels on the screen.
 
 1. Inspect **Cove**. Its critical issue, 80% adoption and positive sponsor are visible together on **Overview**. Compare **Drift**. Its adoption says **Unknown**, and its signal says the usage report failed. On **Plan**, choose **Request information**, enter “Corrected weekly usage report”, and choose **Save information request**. The confirmation says no extra slot was used, and the count stays at zero. The saved request appears on **Plan**.
 2. Open Cove, select **Plan**, and choose **Plan an intervention**. The suggested action is **Coordinate a fix for the critical issue**. Choose **Save intervention** with no owner. Enter Sam, then check that the calendar disables dates after Cove’s renewal. Choose a follow-up two days from today and save. The count becomes one. Reload, reopen Cove, and select **Plan**. The agreed plan still shows the action, Sam, the selected follow-up date, and the evidence from the time of the decision.
@@ -75,7 +75,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open the [local dashboard](http://127.0.0.1:3000/dashboard).
+Open the [local dashboard](http://127.0.0.1:3000/).
 
 Run `pnpm typecheck`, `pnpm test`, and `pnpm build` from the repository root. Turborepo runs each task in the workspace packages that implement it. The frontend static build is written to `frontend/web/out/`. `pnpm test` checks the attention rules, the slot limit, an information request, a missing owner, and Cove after the issue is resolved.
 
@@ -87,7 +87,7 @@ Codex ran `pnpm typecheck`, `pnpm test`, and `pnpm build` locally. All three pas
 
 AI assistance covered interface alternatives, the architecture diagram, implementation, documentation and scripted verification. The author directed the dashboard layout, modal behavior, theme options and phased frontend-first approach.
 
-[Public prototype](https://customer-renewal-workbench.vercel.app/dashboard) · [Local dashboard](http://127.0.0.1:3000/dashboard) · [Public repository](https://github.com/velrino/customer-renewal-workbench)
+[Public prototype](https://customer-renewal-workbench.vercel.app/) · [Local dashboard](http://127.0.0.1:3000/) · [Public repository](https://github.com/velrino/customer-renewal-workbench)
 
 ## Reviewing with an AI assistant
 
