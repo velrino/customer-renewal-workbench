@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+
+usage() {
+  echo 'Usage: ./cli [web | --help]'
+  echo '  web    Start the local frontend (default).'
+}
+
+if [ "$#" -gt 1 ]; then
+  usage >&2
+  exit 2
+fi
+
+case ${1-web} in
+  web) exec "$(dirname "$0")/scripts/web.sh" ;;
+  -h|--help|help) usage ;;
+  *) usage >&2; exit 2 ;;
+esac
