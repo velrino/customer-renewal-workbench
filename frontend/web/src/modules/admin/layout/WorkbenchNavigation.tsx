@@ -75,7 +75,7 @@ export function Navigation() {
 
 export function Navbar({ onReset }: { onReset: () => Promise<void> }) {
   const t = useTranslations('nav')
-  const { environment, availability, select } = useEnvironment()
+  const { preferredEnvironment, availability, select } = useEnvironment()
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -109,7 +109,7 @@ export function Navbar({ onReset }: { onReset: () => Promise<void> }) {
           <SelectDropdown
             label={t('environment')}
             description={t(`environmentHint.${availability}`)}
-            value={environment}
+            value={preferredEnvironment}
             onValueChange={select}
             items={[
               { value: 'local', label: t('local') },
