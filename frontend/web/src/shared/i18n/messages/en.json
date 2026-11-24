@@ -33,6 +33,10 @@
     "system": "Use device setting",
     "overview": "Overview"
   },
+  "notFound": {
+    "title": "Page not found",
+    "back": "Back to dashboard"
+  },
   "rateLimit": {
     "retryAfter": "Try again in {seconds, plural, one {# second} other {# seconds}}."
   },

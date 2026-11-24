@@ -3,6 +3,7 @@
 import { BriefcaseBusiness, ExternalLink, LayoutDashboard, UserRound, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEnvironment } from '@/shared/api/environment'
 import { useTranslations } from 'next-intl'
 import { SelectDropdown } from '@/shared/ui/select-dropdown'
@@ -27,6 +28,7 @@ import {
 export function Navigation() {
   const t = useTranslations('nav')
   const { environment } = useEnvironment()
+  const isDashboard = usePathname() === '/'
   const { setOpenMobile, isMobile } = useSidebar()
   return (
     <Sidebar variant="inset" collapsible="icon">
@@ -58,7 +60,7 @@ export function Navigation() {
             <SidebarGroupLabel>{t('workspace')}</SidebarGroupLabel>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip={t('dashboard')} aria-label={t('dashboard')} aria-current="page" isActive asChild>
+                <SidebarMenuButton tooltip={t('dashboard')} aria-label={t('dashboard')} aria-current={isDashboard ? 'page' : undefined} isActive={isDashboard} asChild>
                   <Link href="/" onClick={() => setOpenMobile(false)}>
                     <LayoutDashboard />
                     <span>{t('dashboard')}</span>
@@ -73,7 +75,7 @@ export function Navigation() {
   )
 }
 
-export function Navbar({ onReset }: { onReset: () => Promise<void> }) {
+export function Navbar({ title, onReset }: { title?: string; onReset?: () => Promise<void> }) {
   const t = useTranslations('nav')
   const { preferredEnvironment, availability, select } = useEnvironment()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -95,7 +97,7 @@ export function Navbar({ onReset }: { onReset: () => Promise<void> }) {
       <SidebarTrigger variant="outline" />
       <Separator orientation="vertical" className="max-h-6" />
       <span className="text-sm font-medium">
-        {t('overview')}
+        {title ?? t('overview')}
       </span>
       <ThemeDialog />
       <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
@@ -116,7 +118,7 @@ export function Navbar({ onReset }: { onReset: () => Promise<void> }) {
               { value: 'api', label: t('api'), disabled: availability !== 'available' },
             ]}
           />
-          <ResetWorkbenchDialog onReset={onReset} />
+          {onReset && <ResetWorkbenchDialog onReset={onReset} />}
           <Separator />
           {([
             ['github', 'https://github.com/velrino/customer-renewal-workbench'],
