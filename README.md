@@ -2,7 +2,7 @@
 
 **TL;DR** — A Customer Success manager oversees 40 accounts and can help two this week. This Hacker Eval prototype uses six fictional B2B accounts to show how the manager can review renewal evidence, choose interventions, and assign follow-ups. The head of Customer Success is the buyer.
 
-[Live dashboard](https://customer-renewal-workbench.vercel.app/) · [Account queue](https://customer-renewal-workbench.vercel.app/#account-queue) · [Frontend guide](frontend/web/README.md) · [Architecture](#architecture) · [Renewal flows](#renewal-flows) · [Monthly costs](#monthly-costs) · [Project plan](docs/PLANS/0-START/plan.excalidraw) · [Plan preview](docs/PLANS/0-START/plan.svg)
+[Live dashboard](https://customer-renewal-workbench.vercel.app/) · [Account queue](https://customer-renewal-workbench.vercel.app/#account-queue) · [Frontend guide](frontend/web/README.md) · [Architecture](#architecture) · [Renewal flows](#renewal-flows) · [Decision trade-offs](#decision-trade-offs) · [Monthly costs](#monthly-costs) · [Project plan](docs/PLANS/0-START/plan.excalidraw) · [Plan preview](docs/PLANS/0-START/plan.svg)
 
 ## Architecture
 
@@ -80,6 +80,44 @@ Start in a fresh browser profile and skip or finish the quick tour.
 **Reset workbench** restores the starting portfolio in the selected environment. In API mode it clears everyone’s plans, questions and owner updates after confirmation. The Local portfolio stays separate when switching modes or falling back to Local. The shared demo is public and intended for fictional data.
 
 **Proposed success metric** — Share of accounts renewing within 30 days with a plan saved before renewal that cites a signal, names an owner, and schedules follow-up by renewal. The starting denominator is Beacon, Cove, Drift, and Ember. The dashboard measures planning coverage. Measuring renewal impact would require outcome data and a comparison.
+
+## Decision trade-offs
+
+### Product and workflow
+
+| Decision | What we gain | Cost and when to revisit |
+| --- | --- | --- |
+| Six fictional accounts in a queue, with the evidence and editor together for one account | A reviewer can follow a conflicting case such as Cove from the queue to an actionable plan in one sitting. | Comparing two detailed histories takes extra navigation. A larger portfolio would also need to exercise search and ranking with realistic data. |
+| Renewal dates relative to the reviewer’s local day | Ember is always seven days from renewal when a reviewer opens the demo. The API checks follow-up dates in the caller’s time zone. | The sample deadline moves as days pass. A real portfolio needs contractual renewal dates and an agreed business time zone. |
+| Explicit attention rules and a separate “Needs information” state | A manager can explain why Ember needs action and why Drift’s failed report calls for a question. Treating unknown adoption as zero would give Drift a misleading risk signal. | Fixed thresholds miss gradual declines. Revisit them against observed renewals and the cases managers consistently override. |
+| Two active intervention slots, with one owner, follow-up date and original evidence per plan | Choosing Ember and Cove makes the capacity decision visible. Asking for Drift’s report costs no slot. Preserving the original signal explains an intervention after the issue is resolved. | Beacon waits despite its adoption drop. Completing a plan releases capacity. Different team sizes or calendar-based allocation would need a different capacity rule. |
+| Measure planning coverage for near-term renewals | The dashboard can show which upcoming renewals have an actionable plan using evidence already captured. | A team can improve coverage and still lose renewals. Evaluating business impact requires actual renewal outcomes and a comparison group. |
+
+### Browser and shared data
+
+| Decision | What we gain | Cost and when to revisit |
+| --- | --- | --- |
+| IndexedDB for local account work | A single read-write transaction checks the account revision and remaining capacity before saving. Two tabs competing for the last slot cannot both claim it. | Reads are asynchronous, and clearing site data erases local work. SQLite in the browser would offer SQL joins and aggregation, but adds a WebAssembly runtime and a persistence layer for six records. Revisit if local reporting needs relational queries. |
+| `localStorage` for theme, renewal range and environment | React can read a few small preferences synchronously and pick up changes from another tab. | Synchronous access blocks the UI thread during each read or write. IndexedDB could hold preferences too and consolidate storage, at the cost of asynchronous startup and migrating existing preferences. |
+| Local startup, background API health check and an environment pinned to each open editor | A reviewer can open the dashboard during an outage. A shared draft keeps its original destination if connectivity changes. | Local and shared portfolios can diverge. Work saved locally has no automatic upload path. Offline editing of the shared board would need a sync and conflict-resolution policy. |
+| Native Firestore snapshots for shared reads, API commands for all writes | Both reviewers see a committed change without polling. The API validates the action and capacity even when the caller bypasses the UI. Firestore supports both the listener and the transaction in one database. | The browser depends on Firebase, and the API identity and Firestore read rules need separate checks. Each listener consumes reads. Revisit the read path if clients need a provider-independent subscription or narrower access. |
+| One shared board document with per-account revisions | One transaction can check the last slot across all six accounts. An unrelated edit leaves another account’s revision valid. Reset advances every revision so stale drafts cannot restore cleared work. | Different accounts still contend on the same document, and subscribers receive the board on each change. A larger or busier portfolio may justify account documents plus a transactional capacity counter. |
+| Public synthetic board and a confirmed, global reset | Reviewers can collaborate and restore the same starting conditions without signing in. A cooldown stored with the board survives API restarts. | Anyone with access can change the demo or clear another reviewer’s work. Real customer data would require authentication, workspace isolation and a narrower reset permission. |
+| Paginated HTTP listing for API clients | Clients can browse the six renewals in stable renewal order, including untouched accounts and saved edits. The dashboard keeps its live view. | Each nonempty page reads the whole shared document before slicing it. If the portfolio becomes dynamic, query the records in storage and paginate with a cursor. |
+
+### Delivery and operations
+
+| Decision | What we gain | Cost and when to revisit |
+| --- | --- | --- |
+| Static Next.js on Vercel, with a modular Go API on Cloud Run | The dashboard can be served as static files. Shared commands run in a separately deployable service close to Firestore, with one component responsible for write validation. | Two deployments must agree on the API origin and database. The static frontend needs a rebuild for a new origin, and the local and shared implementations of the workflow rules must stay in sync. |
+| One Go service with domain modules and shared HTTP middleware | Health and renewals ship as one binary. Each route group can reuse rate limiting and error reporting while choosing its own quota. | A change to one module ships the service again. Separate deployments become worthwhile if modules need different scaling or release schedules. |
+| Cache the health probe in memory and apply separate read, command and reset quotas per instance | Concurrent health checks reuse a dependency result. Heavy listing traffic leaves command and reset quotas available. The process keeps the cached result and quota counters in memory. | Health may lag a dependency change until the cached result expires. Restarts refill quotas, additional instances have independent limits, and callers behind one proxy may share a bucket. A strict global quota would need shared counters. |
+| OpenAPI grouped by domain, rendered in Scalar | A caller can inspect pagination, error responses and retry behavior alongside the operation. One contract supplies the reference. | Handlers and the contract are maintained separately. A change to a response or parameter requires checking both against an actual request. |
+| Separate product analytics and error reporting | PostHog counts visits and coarse error events. Sentry groups exceptions across the browser and API. Responsibility-based modules keep provider setup out of dashboard code. | Two integrations need configuration and verification. Limiting collected fields and disabling replay protects reviewer input but leaves less context for reproducing a failure. |
+| One pnpm/Turbo workspace, Air for Go reloads, and CI for both runtimes | One local command starts both services. CI checks the frontend build and exercises backend changes with race tests and a container build. The Firestore emulator makes shared resets repeatable. | Contributors working across the stack need Node and Go, plus Java for the emulator. A passing build or emulator test still leaves production IAM, deployed configuration and browser compatibility to verify. |
+| Estimate monthly costs by reviewer count and hosting plan | Reviewers can see how a paid hosting seat, API usage and Firestore traffic contribute to the total. | The model depends on listener activity, payload size and hosting eligibility. Recalculate from observed usage before using it as a budget. |
+
+The [storage adapters](frontend/web/src/shared/storage/), [renewal handlers](backend/api/internal/modules/renewals/) and [Firestore rules](infra/firebase/firestore.rules) show where these choices are enforced. For projected spend, see the [monthly cost assumptions](docs/COST/README.md). For the SQLite alternative, see its [browser persistence options](https://sqlite.org/wasm/doc/trunk/persistence.md).
 
 ## Monthly costs
 
