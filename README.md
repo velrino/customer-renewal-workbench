@@ -71,12 +71,13 @@ The exercise uses synthetic data and explainable attention rules. Live analytics
 From the repository root, start the frontend with Node.js 22.12+ and pnpm 10.
 
 ```sh
-./cli
+pnpm install --frozen-lockfile
+pnpm dev
 ```
 
-Open the [local dashboard](http://127.0.0.1:3000/dashboard). Run `./cli --help` to list commands.
+Open the [local dashboard](http://127.0.0.1:3000/dashboard).
 
-Run `pnpm typecheck`, `pnpm test`, and `pnpm build` from `frontend/web`. The static build is written to `out/`. `pnpm test` checks the attention rules, the slot limit, an information request, a missing owner, and Cove after the issue is resolved.
+Run `pnpm typecheck`, `pnpm test`, and `pnpm build` from the repository root. Turborepo runs each task in the workspace packages that implement it. The frontend static build is written to `frontend/web/out/`. `pnpm test` checks the attention rules, the slot limit, an information request, a missing owner, and Cove after the issue is resolved.
 
 ### Verification
 
