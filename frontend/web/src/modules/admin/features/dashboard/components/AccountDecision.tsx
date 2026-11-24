@@ -9,6 +9,7 @@ import {
   evidenceKey,
   renewalDate,
   sampleDay,
+  suggestedAction,
   WorkflowError,
   type AccountWork,
   type Action,
@@ -31,11 +32,15 @@ export function AccountDecision({
   work,
   save,
   ready,
+  readError,
+  retry,
   used,
 }: {
   account: Account
   work?: AccountWork
   ready: boolean
+  readError: boolean
+  retry: () => Promise<void>
   used: number
   save: (account: Account, revision: number, command: Command) => Promise<void>
 }) {
@@ -47,17 +52,13 @@ export function AccountDecision({
   const plan = work?.plan
   const status = attention(account, work)
   function edit(mode: Editor['mode']) {
-    const recommended: Record<string, Action> = {
-      cove: 'resolveIssue',
-      ember: 'budget',
-      beacon: 'reconnect',
-    }
+    const activePlan = plan?.status === 'active' ? plan : undefined
     setDraft({
       mode,
       revision: work?.revision ?? 0,
-      owner: plan?.owner ?? '',
-      followUp: plan?.followUp ?? '',
-      action: plan?.action ?? recommended[account.id] ?? 'checkIn',
+      owner: activePlan?.owner ?? '',
+      followUp: activePlan?.followUp ?? '',
+      action: activePlan?.action ?? suggestedAction(account, work),
       question: work?.information ?? '',
     })
     setError(null)
@@ -281,7 +282,13 @@ export function AccountDecision({
             </div>
           </section>
         )}
-      {!ready && <p role="status">{t('unavailable')}</p>}
+      {readError && (
+        <div role="alert">
+          {t('storageError')}{' '}
+          <Button variant="outline" onClick={() => void retry()}>{t('retry')}</Button>
+        </div>
+      )}
+      {!ready && !readError && <p role="status">{t('unavailable')}</p>}
     </div>
   )
 }

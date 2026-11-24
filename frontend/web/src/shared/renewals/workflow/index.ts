@@ -46,8 +46,7 @@ export function attention(a: Account, work?: AccountWork): Attention {
   const decline =
     a.previousAdoption != null &&
     a.adoption != null &&
-    Math.round(a.previousAdoption * 100) - Math.round(a.adoption * 100) >=
-      adoptionDropPoints
+    a.previousAdoption - a.adoption + Number.EPSILON >= adoptionDropPoints / 100
   if (
     (a.critical && !work?.issueResolved) ||
     (a.budgetPending && a.days <= budgetHorizonDays) ||
@@ -70,7 +69,14 @@ export function signalsConflict(a: Account, work?: AccountWork) {
 }
 
 export function evidenceKey(a: Account, work?: AccountWork) {
-  return work?.issueResolved ? 'coveResolved' : a.id
+  return a.id === 'cove' && work?.issueResolved ? 'coveResolved' : a.id
+}
+
+export function suggestedAction(account: Account, work?: AccountWork): Action {
+  if (account.critical && !work?.issueResolved) return 'resolveIssue'
+  if (account.budgetPending) return 'budget'
+  if (account.sponsor === 'unreachable') return 'reconnect'
+  return 'checkIn'
 }
 
 export function committed(changes: Changes) {
