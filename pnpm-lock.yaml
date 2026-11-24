@@ -12,6 +12,8 @@ importers:
         specifier: 2.11.13
         version: 2.11.13
 
+  backend/api: {}
+
   frontend/web:
     dependencies:
       '@dnd-kit/core':

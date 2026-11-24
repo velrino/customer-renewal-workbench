@@ -1,0 +1,9 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "dev": {
+      "passThroughEnv": ["GOOGLE_CLOUD_PROJECT", "GOOGLE_APPLICATION_CREDENTIALS", "FIRESTORE_DATABASE", "PORT", "APP_ENV", "SENTRY_DSN", "SENTRY_RELEASE"]
+    }
+  }
+}
