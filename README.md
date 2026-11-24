@@ -145,6 +145,8 @@ Start in a fresh browser profile and skip or finish the quick tour.
 
 ### Delivered and at scale
 
+[![Project plan comparing the delivered renewal workflow with a workspace design at scale](docs/PLANS/0-START/plan.svg)](docs/PLANS/0-START/plan.svg)
+
 Read each row across. The right column describes an option and the condition that would justify it. [Full visual plan](docs/PLANS/0-START/plan.svg) · [Editable source](docs/PLANS/0-START/plan.excalidraw)
 
 | Delivered | At scale |
