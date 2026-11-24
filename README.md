@@ -55,13 +55,40 @@ Open the [local dashboard](http://127.0.0.1:3000/). The [frontend guide](fronten
 
 Select a preview to read the full sequence. Each diagram also links to its editable Mermaid source.
 
-| Workflow |
-| --- |
-| **[Choose an environment](docs/ARCHITECTURE/steps/01-environment/)**<br>The dashboard checks API health in the background while the local portfolio is available.<br>[Mermaid source](docs/ARCHITECTURE/steps/01-environment/SEQUENCE.txt)<br><br><a href="docs/ARCHITECTURE/steps/01-environment/diagram.png"><img src="docs/ARCHITECTURE/steps/01-environment/diagram.png" width="720" alt="Local preference and API availability determine the active environment." /></a> |
-| **[Record local work](docs/ARCHITECTURE/steps/02-local-work/)**<br>Request missing evidence for Drift and save an intervention for Cove. Only the intervention uses a slot.<br>[Mermaid source](docs/ARCHITECTURE/steps/02-local-work/SEQUENCE.txt)<br><br><a href="docs/ARCHITECTURE/steps/02-local-work/diagram.png"><img src="docs/ARCHITECTURE/steps/02-local-work/diagram.png" width="720" alt="A local information request and plan are committed in IndexedDB and reflected across tabs." /></a> |
-| **[Save a shared plan](docs/ARCHITECTURE/steps/03-shared-write/)**<br>One browser submits the command. Both reviewers receive the committed plan from Firestore.<br>[Mermaid source](docs/ARCHITECTURE/steps/03-shared-write/SEQUENCE.txt)<br><br><a href="docs/ARCHITECTURE/steps/03-shared-write/diagram.png"><img src="docs/ARCHITECTURE/steps/03-shared-write/diagram.png" width="720" alt="The API validates a shared plan and Firestore streams the result to both reviewers." /></a> |
-| **[Claim the final weekly slot](docs/ARCHITECTURE/steps/04-last-slot/)**<br>With one active plan, two reviewers submit different accounts. Only one can take the remaining slot.<br>[Mermaid source](docs/ARCHITECTURE/steps/04-last-slot/SEQUENCE.txt)<br><br><a href="docs/ARCHITECTURE/steps/04-last-slot/diagram.png"><img src="docs/ARCHITECTURE/steps/04-last-slot/diagram.png" width="720" alt="Two simultaneous interventions compete for the final slot and one receives a conflict." /></a> |
-| **[Reset the shared portfolio](docs/ARCHITECTURE/steps/05-shared-reset/)**<br>One confirmation restores all six accounts for everyone in Shared API mode. A second reset within 60 seconds returns a retry delay.<br>[Mermaid source](docs/ARCHITECTURE/steps/05-shared-reset/SEQUENCE.txt)<br><br><a href="docs/ARCHITECTURE/steps/05-shared-reset/diagram.png"><img src="docs/ARCHITECTURE/steps/05-shared-reset/diagram.png" width="720" alt="The API checks reset limits and restores the shared board in a Firestore transaction." /></a> |
+<p align="center">
+  <strong><a href="docs/ARCHITECTURE/steps/01-environment/">Choose an environment</a></strong><br>
+  The dashboard checks API health in the background while the local portfolio is available.<br>
+  <a href="docs/ARCHITECTURE/steps/01-environment/SEQUENCE.txt">Mermaid source</a><br><br>
+  <a href="docs/ARCHITECTURE/steps/01-environment/diagram.png"><img src="docs/ARCHITECTURE/steps/01-environment/diagram.png" width="720" alt="Local preference and API availability determine the active environment." /></a>
+</p>
+
+<p align="center">
+  <strong><a href="docs/ARCHITECTURE/steps/02-local-work/">Record local work</a></strong><br>
+  Request missing evidence for Drift and save an intervention for Cove. Only the intervention uses a slot.<br>
+  <a href="docs/ARCHITECTURE/steps/02-local-work/SEQUENCE.txt">Mermaid source</a><br><br>
+  <a href="docs/ARCHITECTURE/steps/02-local-work/diagram.png"><img src="docs/ARCHITECTURE/steps/02-local-work/diagram.png" width="720" alt="A local information request and plan are committed in IndexedDB and reflected across tabs." /></a>
+</p>
+
+<p align="center">
+  <strong><a href="docs/ARCHITECTURE/steps/03-shared-write/">Save a shared plan</a></strong><br>
+  One browser submits the command. Both reviewers receive the committed plan from Firestore.<br>
+  <a href="docs/ARCHITECTURE/steps/03-shared-write/SEQUENCE.txt">Mermaid source</a><br><br>
+  <a href="docs/ARCHITECTURE/steps/03-shared-write/diagram.png"><img src="docs/ARCHITECTURE/steps/03-shared-write/diagram.png" width="720" alt="The API validates a shared plan and Firestore streams the result to both reviewers." /></a>
+</p>
+
+<p align="center">
+  <strong><a href="docs/ARCHITECTURE/steps/04-last-slot/">Claim the final weekly slot</a></strong><br>
+  With one active plan, two reviewers submit different accounts. Only one can take the remaining slot.<br>
+  <a href="docs/ARCHITECTURE/steps/04-last-slot/SEQUENCE.txt">Mermaid source</a><br><br>
+  <a href="docs/ARCHITECTURE/steps/04-last-slot/diagram.png"><img src="docs/ARCHITECTURE/steps/04-last-slot/diagram.png" width="720" alt="Two simultaneous interventions compete for the final slot and one receives a conflict." /></a>
+</p>
+
+<p align="center">
+  <strong><a href="docs/ARCHITECTURE/steps/05-shared-reset/">Reset the shared portfolio</a></strong><br>
+  One confirmation restores all six accounts for everyone in Shared API mode. A second reset within 60 seconds returns a retry delay.<br>
+  <a href="docs/ARCHITECTURE/steps/05-shared-reset/SEQUENCE.txt">Mermaid source</a><br><br>
+  <a href="docs/ARCHITECTURE/steps/05-shared-reset/diagram.png"><img src="docs/ARCHITECTURE/steps/05-shared-reset/diagram.png" width="720" alt="The API checks reset limits and restores the shared board in a Firestore transaction." /></a>
+</p>
 
 ## Starting portfolio
 
