@@ -1,6 +1,7 @@
 import { storageKey } from '..'
 
 export const preferenceKeys = {
+  environment: storageKey('preferences', 'environment'),
   renewalRange: storageKey('preferences', 'renewal-range'),
   metricOrder: storageKey('preferences', 'metric-order'),
   theme: storageKey('preferences', 'theme'),

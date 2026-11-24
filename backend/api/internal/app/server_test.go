@@ -53,6 +53,9 @@ func TestHealth(t *testing.T) {
 			misses := 0
 			for range 4 {
 				w := <-results
+				if w.Header().Get("Access-Control-Allow-Origin") != "*" {
+					t.Fatal("browser cannot read health response")
+				}
 				if w.Code != tc.code || w.Header().Get("Cache-Control") != "no-store" {
 					t.Fatal(w.Result())
 				}

@@ -3,6 +3,7 @@
 import { BriefcaseBusiness, ExternalLink, LayoutDashboard, UserRound, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useEnvironment } from '@/shared/api/environment'
 import { useTranslations } from 'next-intl'
 import { SelectDropdown } from '@/shared/ui/select-dropdown'
 import { Button } from '@/shared/ui/button'
@@ -23,10 +24,9 @@ import {
   useSidebar,
 } from '@/shared/ui/sidebar'
 
-const workbenchEnvironment: 'local' | 'api' = 'local'
-
 export function Navigation() {
   const t = useTranslations('nav')
+  const { environment } = useEnvironment()
   const { setOpenMobile, isMobile } = useSidebar()
   return (
     <Sidebar variant="inset" collapsible="icon">
@@ -37,7 +37,7 @@ export function Navigation() {
           </span>
           <div className="truncate text-sm group-data-[collapsible=icon]:hidden">
             <strong>{t('brand')}</strong>
-            <div className="text-xs">{t(workbenchEnvironment)}</div>
+            <div className="text-xs">{t(environment)}</div>
           </div>
           {isMobile && (
             <Button
@@ -75,6 +75,7 @@ export function Navigation() {
 
 export function Navbar({ onReset }: { onReset: () => Promise<void> }) {
   const t = useTranslations('nav')
+  const { environment, availability, select } = useEnvironment()
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -107,11 +108,12 @@ export function Navbar({ onReset }: { onReset: () => Promise<void> }) {
           <DialogTitle>{t('userMenu')}</DialogTitle>
           <SelectDropdown
             label={t('environment')}
-            description={t('environmentHint')}
-            value={workbenchEnvironment}
+            description={t(`environmentHint.${availability}`)}
+            value={environment}
+            onValueChange={select}
             items={[
               { value: 'local', label: t('local') },
-              { value: 'api', label: t('api'), disabled: true },
+              { value: 'api', label: t('api'), disabled: availability !== 'available' },
             ]}
           />
           <ResetWorkbenchDialog onReset={onReset} />

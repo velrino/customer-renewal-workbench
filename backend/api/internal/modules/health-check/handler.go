@@ -73,6 +73,7 @@ type HealthCheckRuntimeResponse struct {
 
 func (handler *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	started := time.Now()
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Cache-Control", "no-store")
 	snapshot, hit, err := handler.snapshot(r.Context())
 	if err != nil {
