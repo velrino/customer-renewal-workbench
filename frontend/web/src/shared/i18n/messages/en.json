@@ -10,7 +10,11 @@
     "environment": "Environment",
     "local": "Local",
     "api": "API",
-    "environmentHint": "Changes are saved in this browser. The API is not connected yet.",
+    "environmentHint": {
+      "checking": "Checking API availability. You can keep working locally.",
+      "available": "API is available. Account changes are saved in this browser.",
+      "unavailable": "API is unavailable. You can keep working locally."
+    },
     "reset": "Reset workbench",
     "resetTitle": "Reset this workbench?",
     "resetDescription": "This permanently clears all saved interventions, information requests, account updates and preferences in this browser. The dashboard will reopen with the six original accounts.",
