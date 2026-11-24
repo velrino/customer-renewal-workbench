@@ -1,0 +1,53 @@
+---
+title: 04 · Two reviewers compete for the final slot
+config:
+  theme: base
+  fontFamily: Arial, sans-serif
+  themeCSS: |
+    rect.actor[name="B"] { fill: #136b81 !important; stroke: #136b81 !important; }
+    rect.actor[name="T"] { fill: #286368 !important; stroke: #286368 !important; }
+    rect.actor[name="A"] { fill: #365b9b !important; stroke: #365b9b !important; }
+    rect.actor[name="D"] { fill: #725191 !important; stroke: #725191 !important; }
+    text.actor, text.actor tspan { fill: #ffffff !important; font-weight: bold; }
+    .sequenceTitle, .titleText { font-weight: bold; }
+  themeVariables:
+    background: "#ffffff"
+    actorBkg: "#365b9b"
+    actorTextColor: "#ffffff"
+    actorLineColor: "#9aaaba"
+    signalColor: "#33465b"
+    signalTextColor: "#223447"
+    labelBoxBkgColor: "#edf2f8"
+    labelBoxBorderColor: "#8395a9"
+    labelTextColor: "#243954"
+    noteBkgColor: "#f4f7fb"
+    noteBorderColor: "#bdcbd9"
+    noteTextColor: "#35485c"
+    loopTextColor: "#33465b"
+  sequence:
+    mirrorActors: false
+    wrap: true
+    width: 165
+    height: 46
+    actorMargin: 55
+    messageMargin: 32
+    noteMargin: 12
+---
+sequenceDiagram
+    autonumber
+    participant B as Reviewer A
+    participant T as Reviewer B
+    participant A as Go API
+    participant D as Firestore
+    Note over A,D: One of the two weekly slots is already occupied.
+    par Ember request
+        B->>A: Submit an Ember intervention
+    and Beacon request
+        T->>A: Submit a Beacon intervention
+    end
+    A->>D: First transaction commits the second active plan
+    A-->>B: 204 · Ember saved in this example
+    A->>D: Competing transaction reads the current board
+    D-->>A: Both slots are occupied
+    A-->>T: 409 · full
+    Note over B,T: Either request can win. The rejected draft can be retried after a slot is released.

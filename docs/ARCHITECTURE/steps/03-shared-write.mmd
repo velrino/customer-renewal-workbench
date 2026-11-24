@@ -1,0 +1,54 @@
+---
+title: 03 · Save a shared plan and deliver the update
+config:
+  theme: base
+  fontFamily: Arial, sans-serif
+  themeCSS: |
+    rect.actor[name="B"] { fill: #136b81 !important; stroke: #136b81 !important; }
+    rect.actor[name="A"] { fill: #365b9b !important; stroke: #365b9b !important; }
+    rect.actor[name="D"] { fill: #725191 !important; stroke: #725191 !important; }
+    rect.actor[name="T"] { fill: #286368 !important; stroke: #286368 !important; }
+    text.actor, text.actor tspan { fill: #ffffff !important; font-weight: bold; }
+    .sequenceTitle, .titleText { font-weight: bold; }
+  themeVariables:
+    background: "#ffffff"
+    actorBkg: "#365b9b"
+    actorTextColor: "#ffffff"
+    actorLineColor: "#9aaaba"
+    signalColor: "#33465b"
+    signalTextColor: "#223447"
+    labelBoxBkgColor: "#edf2f8"
+    labelBoxBorderColor: "#8395a9"
+    labelTextColor: "#243954"
+    noteBkgColor: "#f4f7fb"
+    noteBorderColor: "#bdcbd9"
+    noteTextColor: "#35485c"
+    loopTextColor: "#33465b"
+  sequence:
+    mirrorActors: false
+    wrap: true
+    width: 165
+    height: 46
+    actorMargin: 55
+    messageMargin: 32
+    noteMargin: 12
+---
+sequenceDiagram
+    autonumber
+    participant B as Reviewer A
+    participant A as Go API
+    participant D as Firestore
+    participant T as Reviewer B
+    T->>D: Subscribe to the shared board
+    B->>A: Submit a plan with the account revision
+    A->>A: Admit the command under its write quota
+    A->>D: Begin transaction and read shared board
+    D-->>A: Current changes and account revisions
+    A->>A: Validate revision, owner, follow-up and capacity
+    A->>D: Commit plan and advance revision
+    par HTTP response
+        A-->>B: 204 · saved
+    and Realtime delivery
+        D-->>B: Updated board snapshot
+        D-->>T: Updated board snapshot
+    end
