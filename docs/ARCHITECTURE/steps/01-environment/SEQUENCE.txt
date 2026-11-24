@@ -1,13 +1,13 @@
 ---
-title: 02 · Review evidence and record local work
+title: 01 · Choose the work environment
 config:
   theme: base
   fontFamily: Arial, sans-serif
   themeCSS: |
-    rect.actor[name="U"] { fill: #146d64 !important; stroke: #146d64 !important; }
     rect.actor[name="B"] { fill: #136b81 !important; stroke: #136b81 !important; }
+    rect.actor[name="P"] { fill: #536d87 !important; stroke: #536d87 !important; }
+    rect.actor[name="A"] { fill: #365b9b !important; stroke: #365b9b !important; }
     rect.actor[name="D"] { fill: #725191 !important; stroke: #725191 !important; }
-    rect.actor[name="T"] { fill: #286368 !important; stroke: #286368 !important; }
     text.actor, text.actor tspan { fill: #ffffff !important; font-weight: bold; }
     .sequenceTitle, .titleText { font-weight: bold; }
   themeVariables:
@@ -35,18 +35,19 @@ config:
 ---
 sequenceDiagram
     autonumber
-    participant U as Reviewer
     participant B as Dashboard
-    participant D as IndexedDB
-    participant T as Another tab
-    U->>B: Open Drift and inspect its evidence
-    B-->>U: Usage report failed · adoption is unknown
-    U->>B: Request a corrected usage report
-    B->>D: Save question in a read-write transaction
-    D-->>B: Request saved · zero slots used
-    B-->>T: Notify other tabs of the change
-    U->>B: Open Cove and plan a support follow-up
-    B->>D: Check owner, date, revision and available slots
-    D-->>B: Plan saved with the original evidence
-    B-->>T: Notify other tabs to reload account work
-    Note over B,D: Completing the plan releases its slot. Resolving the issue preserves the original evidence.
+    create participant P as Preferences
+    B->>P: Read saved preference
+    P-->>B: Local or Shared API
+    create participant A as API
+    B->>A: Check service health in the background
+    Note over B: Local work is available while the check runs.
+    alt Shared API selected and health is OK
+        A-->>B: 200 · Firestore is up
+        create participant D as Firestore
+        B->>D: Listen to workbenches/shared
+        D-->>B: Current board and later snapshots
+    else Local selected or API unavailable
+        B->>B: Use this profile’s IndexedDB portfolio
+    end
+    Note over B,A: An open account or reset dialog stays attached to its original environment.

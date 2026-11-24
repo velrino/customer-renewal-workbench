@@ -1,11 +1,11 @@
 ---
-title: 03 · Save a shared plan and deliver the update
+title: 02 · Review evidence and record local work
 config:
   theme: base
   fontFamily: Arial, sans-serif
   themeCSS: |
+    rect.actor[name="U"] { fill: #146d64 !important; stroke: #146d64 !important; }
     rect.actor[name="B"] { fill: #136b81 !important; stroke: #136b81 !important; }
-    rect.actor[name="A"] { fill: #365b9b !important; stroke: #365b9b !important; }
     rect.actor[name="D"] { fill: #725191 !important; stroke: #725191 !important; }
     rect.actor[name="T"] { fill: #286368 !important; stroke: #286368 !important; }
     text.actor, text.actor tspan { fill: #ffffff !important; font-weight: bold; }
@@ -35,20 +35,18 @@ config:
 ---
 sequenceDiagram
     autonumber
-    participant B as Reviewer A
-    participant A as Go API
-    participant D as Firestore
-    participant T as Reviewer B
-    T->>D: Subscribe to the shared board
-    B->>A: Submit a plan with the account revision
-    A->>A: Admit the command under its write quota
-    A->>D: Begin transaction and read shared board
-    D-->>A: Current changes and account revisions
-    A->>A: Validate revision, owner, follow-up and capacity
-    A->>D: Commit plan and advance revision
-    par HTTP response
-        A-->>B: 204 · saved
-    and Realtime delivery
-        D-->>B: Updated board snapshot
-        D-->>T: Updated board snapshot
-    end
+    participant U as Reviewer
+    create participant B as Dashboard
+    U->>B: Inspect Drift’s evidence
+    B-->>U: Usage report failed · adoption is unknown
+    U->>B: Request a corrected usage report
+    create participant D as IndexedDB
+    B->>D: Save the question<br/>in a transaction
+    D-->>B: Request saved · zero slots used
+    create participant T as Another tab
+    B-->>T: Notify other tabs of the change
+    U->>B: Open Cove and plan a support follow-up
+    B->>D: Check owner, date, revision and available slots
+    D-->>B: Plan saved with the original evidence
+    B-->>T: Notify other tabs to reload account work
+    Note over B,D: Completing the plan releases its slot. Resolving the issue preserves the original evidence.

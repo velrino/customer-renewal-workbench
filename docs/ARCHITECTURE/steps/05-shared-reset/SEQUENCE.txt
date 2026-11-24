@@ -36,15 +36,15 @@ config:
 sequenceDiagram
     autonumber
     participant U as Reviewer
-    participant A as Go API
-    participant D as Firestore
-    participant T as Other browsers
-    U->>A: Confirm reset · POST /workbench/reset with no body
+    create participant A as API
+    U->>A: POST /workbench/reset<br/>with no body
     A->>A: Check the separate reset request quota
-    A->>D: Read board and last successful reset in a transaction
+    create participant D as Firestore
+    A->>D: Read board and last reset<br/>in one transaction
     alt Reset is available
         A->>D: Clear six accounts’ changes and advance revisions
-        D-->>T: Restored board · two slots available
+        create participant T as Other browsers
+        D-->>T: Board restored<br/>two slots available
         A-->>U: 204 · reset committed
     else Previous reset was less than 60 seconds ago
         A-->>U: 429 · Retry-After in seconds

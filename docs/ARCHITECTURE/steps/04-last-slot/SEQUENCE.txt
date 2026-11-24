@@ -1,11 +1,11 @@
 ---
-title: 01 · Choose the work environment
+title: 04 · Two reviewers compete for the final slot
 config:
   theme: base
   fontFamily: Arial, sans-serif
   themeCSS: |
     rect.actor[name="B"] { fill: #136b81 !important; stroke: #136b81 !important; }
-    rect.actor[name="P"] { fill: #536d87 !important; stroke: #536d87 !important; }
+    rect.actor[name="T"] { fill: #286368 !important; stroke: #286368 !important; }
     rect.actor[name="A"] { fill: #365b9b !important; stroke: #365b9b !important; }
     rect.actor[name="D"] { fill: #725191 !important; stroke: #725191 !important; }
     text.actor, text.actor tspan { fill: #ffffff !important; font-weight: bold; }
@@ -35,19 +35,20 @@ config:
 ---
 sequenceDiagram
     autonumber
-    participant B as Dashboard
-    participant P as Preferences
-    participant A as Go API
     participant D as Firestore
-    B->>P: Read the preferred environment
-    P-->>B: Local or Shared API
-    B->>A: Check service health in the background
-    Note over B: Local work is available while the check runs.
-    alt Shared API selected and health is OK
-        A-->>B: 200 · Firestore is up
-        B->>D: Listen to workbenches/shared
-        D-->>B: Current board and later snapshots
-    else Local selected or API unavailable
-        B->>B: Use this profile’s IndexedDB portfolio
+    create participant B as Reviewer A
+    D-->>B: Board snapshot<br/>one slot available
+    create participant T as Reviewer B
+    D-->>T: Same board · one slot available
+    par Ember request
+        create participant A as API
+        B->>A: Submit an Ember intervention
+    and Beacon request
+        T->>A: Submit a Beacon intervention
     end
-    Note over B,A: An open account or reset dialog stays attached to its original environment.
+    A->>D: First transaction commits the second active plan
+    A-->>B: 204 · Ember saved in this example
+    A->>D: Competing transaction reads the current board
+    D-->>A: Both slots are occupied
+    A-->>T: 409 · full
+    Note over B,T: Either request can win. The rejected draft can be retried after a slot is released.
