@@ -1,0 +1,52 @@
+---
+title: 05 · Reset the portfolio for every shared reviewer
+config:
+  theme: base
+  fontFamily: Arial, sans-serif
+  themeCSS: |
+    rect.actor[name="U"] { fill: #146d64 !important; stroke: #146d64 !important; }
+    rect.actor[name="A"] { fill: #365b9b !important; stroke: #365b9b !important; }
+    rect.actor[name="D"] { fill: #725191 !important; stroke: #725191 !important; }
+    rect.actor[name="T"] { fill: #286368 !important; stroke: #286368 !important; }
+    text.actor, text.actor tspan { fill: #ffffff !important; font-weight: bold; }
+    .sequenceTitle, .titleText { font-weight: bold; }
+  themeVariables:
+    background: "#ffffff"
+    actorBkg: "#365b9b"
+    actorTextColor: "#ffffff"
+    actorLineColor: "#9aaaba"
+    signalColor: "#33465b"
+    signalTextColor: "#223447"
+    labelBoxBkgColor: "#edf2f8"
+    labelBoxBorderColor: "#8395a9"
+    labelTextColor: "#243954"
+    noteBkgColor: "#f4f7fb"
+    noteBorderColor: "#bdcbd9"
+    noteTextColor: "#35485c"
+    loopTextColor: "#33465b"
+  sequence:
+    mirrorActors: false
+    wrap: true
+    width: 165
+    height: 46
+    actorMargin: 55
+    messageMargin: 32
+    noteMargin: 12
+---
+sequenceDiagram
+    autonumber
+    participant U as Reviewer
+    create participant A as API
+    U->>A: POST /workbench/reset<br/>with no body
+    A->>A: Check the separate reset request quota
+    create participant D as Firestore
+    A->>D: Read board and last reset<br/>in one transaction
+    alt Reset is available
+        A->>D: Clear six accounts’ changes and advance revisions
+        create participant T as Other browsers
+        D-->>T: Board restored<br/>two slots available
+        A-->>U: 204 · reset committed
+    else Previous reset was less than 60 seconds ago
+        A-->>U: 429 · Retry-After in seconds
+    end
+    Note over A,D: Older drafts fail the revision check. Local portfolios in IndexedDB keep their work.
