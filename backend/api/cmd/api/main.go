@@ -18,7 +18,7 @@ func setting(key, fallback string) string {
 }
 
 func main() {
-	probe := &firestore.Probe{Project: os.Getenv("GOOGLE_CLOUD_PROJECT"), Database: setting("FIRESTORE_DATABASE", "default")}
+	probe := &firestore.Probe{Project: os.Getenv("GOOGLE_CLOUD_PROJECT"), Database: setting("FIRESTORE_DATABASE", "(default)")}
 	server := http.Server{Addr: ":" + setting("PORT", "8080"), Handler: app.Routes(setting("APP_ENV", "local"), probe.Check), ReadHeaderTimeout: 5 * time.Second, WriteTimeout: 10 * time.Second, IdleTimeout: time.Minute}
 	log.Fatal(server.ListenAndServe())
 }

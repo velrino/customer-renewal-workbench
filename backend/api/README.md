@@ -1,6 +1,6 @@
 # Renewal API
 
-Go service for the Customer Renewal Workbench. The API runs on Cloud Run in Iowa and reads metadata for the Firestore database named `default`. [Scalar API reference](https://renewal-api-43zsh4z3ja-uc.a.run.app/docs)
+Go service for the Customer Renewal Workbench. The API runs on Cloud Run in Iowa and reads metadata for the native Firestore database `(default)` in the same region. [Scalar API reference](https://renewal-api-43zsh4z3ja-uc.a.run.app/docs)
 
 ## Development
 
@@ -8,7 +8,7 @@ From this directory, use the Go version specified in `go.mod`.
 
 ```sh
 export GOOGLE_CLOUD_PROJECT=customer-renewal-workbench
-export FIRESTORE_DATABASE=default
+export FIRESTORE_DATABASE='(default)'
 go run ./cmd/api
 ```
 
