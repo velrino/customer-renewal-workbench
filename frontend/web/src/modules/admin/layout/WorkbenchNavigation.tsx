@@ -23,6 +23,8 @@ import {
   useSidebar,
 } from '@/shared/ui/sidebar'
 
+const workbenchEnvironment: 'local' | 'api' = 'local'
+
 export function Navigation() {
   const t = useTranslations('nav')
   const { setOpenMobile, isMobile } = useSidebar()
@@ -35,7 +37,7 @@ export function Navigation() {
           </span>
           <div className="truncate text-sm group-data-[collapsible=icon]:hidden">
             <strong>{t('brand')}</strong>
-            <div className="text-xs">{t('team')}</div>
+            <div className="text-xs">{t(workbenchEnvironment)}</div>
           </div>
           {isMobile && (
             <Button
@@ -106,20 +108,26 @@ export function Navbar({ onReset }: { onReset: () => Promise<void> }) {
           <SelectDropdown
             label={t('environment')}
             description={t('environmentHint')}
-            defaultValue="local"
+            value={workbenchEnvironment}
             items={[
               { value: 'local', label: t('local') },
               { value: 'api', label: t('api'), disabled: true },
             ]}
           />
-          <Button variant="outline" className="justify-between" asChild>
-            <a href="https://github.com/velrino/customer-renewal-workbench" target="_blank" rel="noopener noreferrer">
-              {t('github')}
-              <span className="sr-only">{t('opensNewTab')}</span>
-              <ExternalLink aria-hidden="true" />
-            </a>
-          </Button>
           <ResetWorkbenchDialog onReset={onReset} />
+          <Separator />
+          {([
+            ['github', 'https://github.com/velrino/customer-renewal-workbench'],
+            ['author', 'https://github.com/velrino/'],
+          ] as const).map(([label, href]) => (
+            <Button key={label} variant="outline" className="justify-between" asChild>
+              <a href={href} target="_blank" rel="noopener noreferrer">
+                {t(label)}
+                <span className="sr-only">{t('opensNewTab')}</span>
+                <ExternalLink aria-hidden="true" />
+              </a>
+            </Button>
+          ))}
         </DialogContent>
       </Dialog>
     </header>

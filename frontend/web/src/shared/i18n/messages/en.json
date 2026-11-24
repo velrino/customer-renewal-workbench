@@ -1,7 +1,6 @@
 {
   "nav": {
     "brand": "Renewal Workbench",
-    "team": "Customer Success",
     "workspace": "Workspace",
     "navigation": "Navigation",
     "dashboard": "Dashboard",
@@ -20,6 +19,7 @@
     "resetError": "The reset did not finish. Check browser storage access and try again.",
     "userMenu": "User menu",
     "github": "GitHub",
+    "author": "Author",
     "opensNewTab": "Opens in a new tab",
     "theme": "Change color theme",
     "light": "Light",
