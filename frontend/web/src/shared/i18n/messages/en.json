@@ -15,7 +15,7 @@
       "available": "In API mode, everyone can see changes and reset the shared demo.",
       "unavailable": "API is unavailable. The dashboard is using Local."
     },
-    "reset": "Reset workbench",
+    "reset": "Reset {environment} workbench",
     "resetTitle": "Reset this workbench?",
     "resetDescription": "This permanently clears all saved interventions, information requests, account updates and preferences in this browser. The dashboard will reopen with the six original accounts.",
     "resetSharedDescription": "This clears all plans, requests and owner updates in the shared demo for everyone, and frees both weekly slots.",
