@@ -24,6 +24,7 @@
     "resetRateLimited": "Too many reset requests.",
     "resetError": "The reset did not finish. Check the current portfolio and try again.",
     "userMenu": "User menu",
+    "environmentMenu": "{environment} · User menu",
     "github": "GitHub",
     "author": "Author",
     "opensNewTab": "Opens in a new tab",

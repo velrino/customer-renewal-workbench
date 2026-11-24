@@ -1,14 +1,13 @@
 'use client'
 
-import { BriefcaseBusiness, ExternalLink, LayoutDashboard, UserRound, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { ArrowLeftRight, BriefcaseBusiness, ExternalLink, LayoutDashboard, UserRound, X } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEnvironment } from '@/shared/api/environment'
 import { useTranslations } from 'next-intl'
 import { SelectDropdown } from '@/shared/ui/select-dropdown'
 import { Button } from '@/shared/ui/button'
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/shared/ui/dialog'
+import { DialogContent, DialogTitle, DialogTrigger } from '@/shared/ui/dialog'
 import { ResetWorkbenchDialog } from './ResetWorkbenchDialog'
 import { ThemeDialog } from '@/shared/ui/theme-dialog'
 import { Separator } from '@/shared/ui/separator'
@@ -25,7 +24,7 @@ import {
   useSidebar,
 } from '@/shared/ui/sidebar'
 
-export function Navigation() {
+export function Navigation({ openUserMenu }: { openUserMenu: () => void }) {
   const t = useTranslations('nav')
   const { environment } = useEnvironment()
   const isDashboard = usePathname() === '/'
@@ -33,13 +32,27 @@ export function Navigation() {
   return (
     <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader>
-        <div className="flex h-12 items-center gap-2 overflow-hidden px-2 group-data-[collapsible=icon]:p-0">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <div className="flex h-12 items-center gap-2 px-2 group-data-[collapsible=icon]:p-0">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground group-data-[collapsible=icon]:hidden">
             <BriefcaseBusiness size={17} />
           </span>
-          <div className="truncate text-sm group-data-[collapsible=icon]:hidden">
-            <strong>{t('brand')}</strong>
-            <div className="text-xs">{t(environment)}</div>
+          <div className="flex min-w-0 flex-col items-start">
+            <strong className="truncate text-sm group-data-[collapsible=icon]:hidden">{t('brand')}</strong>
+            <Button
+              type="button"
+              size="sm"
+              className="h-6 rounded-full bg-slate-700 px-2 text-xs font-semibold text-white hover:bg-slate-800 group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:rounded-lg group-data-[collapsible=icon]:p-0"
+              aria-label={t('environmentMenu', { environment: t(environment) })}
+              title={t('environmentMenu', { environment: t(environment) })}
+              aria-haspopup="dialog"
+              onClick={() => {
+                if (isMobile) setOpenMobile(false)
+                openUserMenu()
+              }}
+            >
+              <span className="uppercase group-data-[collapsible=icon]:hidden">{t(environment)}</span>
+              <ArrowLeftRight aria-hidden="true" className="hidden group-data-[collapsible=icon]:block" />
+            </Button>
           </div>
           {isMobile && (
             <Button
@@ -78,19 +91,6 @@ export function Navigation() {
 export function Navbar({ title, onReset }: { title?: string; onReset?: () => Promise<void> }) {
   const t = useTranslations('nav')
   const { preferredEnvironment, availability, select } = useEnvironment()
-  const [menuOpen, setMenuOpen] = useState(false)
-
-  useEffect(() => {
-    function onEscape(event: KeyboardEvent) {
-      if (event.key !== 'Escape' || event.repeat || event.isComposing || event.defaultPrevented) return
-      // Check before an open overlay handles this same key and unmounts.
-      if (document.querySelector('[role="dialog"]:not([data-state="closed"]), [role="alertdialog"], [role="listbox"]:not([data-state="closed"]), [aria-roledescription="sortable"][aria-pressed="true"]')) return
-      event.preventDefault()
-      setMenuOpen(true)
-    }
-    window.addEventListener('keydown', onEscape, true)
-    return () => window.removeEventListener('keydown', onEscape, true)
-  }, [])
 
   return (
     <header className="flex h-16 items-center gap-4 px-4">
@@ -100,40 +100,38 @@ export function Navbar({ title, onReset }: { title?: string; onReset?: () => Pro
         {title ?? t('overview')}
       </span>
       <ThemeDialog />
-      <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
-        <DialogTrigger asChild>
-          <Button variant="secondary" size="icon" className="rounded-full" aria-keyshortcuts="Escape" aria-label={t('userMenu')} title={t('userMenu')}>
-            <UserRound aria-hidden="true" />
+      <DialogTrigger asChild>
+        <Button variant="secondary" size="icon" className="rounded-full" aria-keyshortcuts="Escape" aria-label={t('userMenu')} title={t('userMenu')}>
+          <UserRound aria-hidden="true" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
+        <DialogTitle>{t('userMenu')}</DialogTitle>
+        <SelectDropdown
+          label={t('environment')}
+          description={t(`environmentHint.${availability}`)}
+          value={preferredEnvironment}
+          onValueChange={select}
+          items={[
+            { value: 'local', label: t('local') },
+            { value: 'api', label: t('api'), disabled: availability !== 'available' },
+          ]}
+        />
+        {onReset && <ResetWorkbenchDialog onReset={onReset} />}
+        <Separator />
+        {([
+          ['github', 'https://github.com/velrino/customer-renewal-workbench'],
+          ['author', 'https://github.com/velrino/'],
+        ] as const).map(([label, href]) => (
+          <Button key={label} variant="outline" className="justify-between" asChild>
+            <a href={href} target="_blank" rel="noopener noreferrer">
+              {t(label)}
+              <span className="sr-only">{t('opensNewTab')}</span>
+              <ExternalLink aria-hidden="true" />
+            </a>
           </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
-          <DialogTitle>{t('userMenu')}</DialogTitle>
-          <SelectDropdown
-            label={t('environment')}
-            description={t(`environmentHint.${availability}`)}
-            value={preferredEnvironment}
-            onValueChange={select}
-            items={[
-              { value: 'local', label: t('local') },
-              { value: 'api', label: t('api'), disabled: availability !== 'available' },
-            ]}
-          />
-          {onReset && <ResetWorkbenchDialog onReset={onReset} />}
-          <Separator />
-          {([
-            ['github', 'https://github.com/velrino/customer-renewal-workbench'],
-            ['author', 'https://github.com/velrino/'],
-          ] as const).map(([label, href]) => (
-            <Button key={label} variant="outline" className="justify-between" asChild>
-              <a href={href} target="_blank" rel="noopener noreferrer">
-                {t(label)}
-                <span className="sr-only">{t('opensNewTab')}</span>
-                <ExternalLink aria-hidden="true" />
-              </a>
-            </Button>
-          ))}
-        </DialogContent>
-      </Dialog>
+        ))}
+      </DialogContent>
     </header>
   )
 }
