@@ -1,0 +1,14 @@
+{
+  "name": "customer-renewal-workbench",
+  "private": true,
+  "packageManager": "pnpm@10.29.3",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "turbo": "2.11.13"
+  }
+}
