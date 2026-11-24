@@ -8,7 +8,7 @@ Use Node.js 22.12+ and pnpm 10. From the repository root, run the following comm
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm dev
+pnpm dev --filter=renewal-workbench-web
 ```
 
 Open the [dashboard at `/`](http://127.0.0.1:3000/). Run `pnpm typecheck`, `pnpm test`, and `pnpm build` from the repository root. The production build exports static files to `frontend/web/out/`.

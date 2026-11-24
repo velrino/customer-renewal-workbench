@@ -10,8 +10,10 @@ Use Node.js 22.12+ and pnpm 10. Run these commands from the repository root.
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm dev
+pnpm dev --filter=renewal-workbench-web
 ```
+
+To start both services, install the Go version in [backend/api/go.mod](backend/api/go.mod) and run `pnpm dev`. See the [API guide](backend/api/README.md) to configure the Firestore health check.
 
 Open the [local dashboard](http://127.0.0.1:3000/). The [frontend guide](frontend/web/README.md) covers the folder structure, build, and telemetry setup.
 
