@@ -128,6 +128,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/WriteRateLimited"
           }
         },
         "parameters": [
@@ -181,6 +184,9 @@
                 }
               }
             }
+          },
+          "429": {
+            "$ref": "#/components/responses/WriteRateLimited"
           }
         }
       }
@@ -527,11 +533,33 @@
               "invalidAction",
               "questionRequired",
               "invalidCommand",
-              "storage"
+              "storage",
+              "rateLimited"
             ]
           }
         },
         "additionalProperties": false
+      }
+    },
+    "responses": {
+      "WriteRateLimited": {
+        "description": "The write limit was reached. Retry after the indicated number of seconds.",
+        "headers": {
+          "Retry-After": {
+            "description": "Seconds until another attempt is allowed.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/WriteError"
+            }
+          }
+        }
       }
     }
   }

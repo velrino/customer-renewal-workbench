@@ -1,4 +1,5 @@
-import { useEnvironment } from '@/shared/api/environment'
+import { ApiError } from '@/shared/api/api.resources'
+import { useEnvironment, useHoldEnvironment } from '@/shared/api/environment'
 import { useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { RotateCcw } from 'lucide-react'
@@ -13,6 +14,7 @@ export function ResetWorkbenchDialog({ onReset }: { onReset: () => Promise<void>
   const { environment } = useEnvironment()
   const cancel = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
+  useHoldEnvironment(open)
   const [busy, setBusy] = useState(false)
 
   async function confirm() {
@@ -21,9 +23,9 @@ export function ResetWorkbenchDialog({ onReset }: { onReset: () => Promise<void>
     try {
       await onReset()
       setOpen(false)
-    } catch {
+    } catch (error) {
       setOpen(false)
-      toast.error(t('resetError'))
+      toast.error(t(error instanceof ApiError && error.reason === 'rateLimited' ? 'resetRateLimited' : 'resetError'))
     } finally {
       setBusy(false)
     }

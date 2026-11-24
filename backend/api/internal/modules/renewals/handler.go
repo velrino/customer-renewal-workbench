@@ -16,8 +16,8 @@ type updateBoard func(context.Context, func(*Board) error) error
 func Register(mux *http.ServeMux, update updateBoard) {
 	commands := "/workbench/accounts/{account}/commands"
 	reset := "/workbench/reset"
-	mux.Handle("POST "+commands, writeHandler(update, false))
-	mux.Handle("POST "+reset, writeHandler(update, true))
+	mux.Handle("POST "+commands, writeHandler(update, false, &writeLimit{perPeer: 30, perInstance: 120}))
+	mux.Handle("POST "+reset, writeHandler(update, true, &writeLimit{perPeer: 3, perInstance: 12}))
 	for _, path := range []string{commands, reset} {
 		mux.HandleFunc("OPTIONS "+path, func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -28,11 +28,15 @@ func Register(mux *http.ServeMux, update updateBoard) {
 	}
 }
 
-func writeHandler(update updateBoard, reset bool) http.HandlerFunc {
+func writeHandler(update updateBoard, reset bool, limit *writeLimit) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Cache-Control", "no-store")
-		mutate := (*Board).reset
+		if delay := limit.check(r.RemoteAddr, time.Now()); delay > 0 {
+			delay.respond(w)
+			return
+		}
+		mutate := func(b *Board) error { return b.reset(time.Now().UTC()) }
 		if reset {
 			if _, err := io.Copy(io.Discard, http.MaxBytesReader(w, r.Body, 0)); err != nil {
 				respondError(w, failure{400, "invalidRequest"})
@@ -72,6 +76,11 @@ func writeHandler(update updateBoard, reset bool) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 7*time.Second)
 		defer cancel()
 		if err := update(ctx, mutate); err != nil {
+			var delay retryAfter
+			if errors.As(err, &delay) {
+				delay.respond(w)
+				return
+			}
 			var f failure
 			if !errors.As(err, &f) {
 				slog.Warn("Shared workbench transaction failed", "error", err)

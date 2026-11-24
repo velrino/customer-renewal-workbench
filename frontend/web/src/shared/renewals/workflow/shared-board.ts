@@ -6,7 +6,7 @@ const appName = 'renewal-workbench'
 const app = getApps().find(item => item.name === appName) ?? initializeApp({
   projectId: process.env.NEXT_PUBLIC_FIRESTORE_PROJECT_ID || 'customer-renewal-workbench',
 }, appName)
-const db = getFirestore(app)
+const db = getFirestore(app, process.env.NEXT_PUBLIC_FIRESTORE_DATABASE || '(default)')
 const emulator = process.env.NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST
 if (emulator) {
   const { hostname, port } = new URL(`http://${emulator}`)

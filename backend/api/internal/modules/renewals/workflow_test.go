@@ -32,7 +32,7 @@ func TestSharedPortfolio(t *testing.T) {
 	apply("beacon", plan, failure{409, "full"})
 	apply("ember", Command{Type: "complete"}, nil)
 	apply("beacon", plan, nil)
-	if err := board.reset(); err != nil {
+	if err := board.reset(now); err != nil {
 		t.Fatal(err)
 	}
 	for id := range renewalDays {
@@ -60,6 +60,55 @@ func TestPlanValidation(t *testing.T) {
 		err := board.apply("ember", 0, Command{Type: "plan", Owner: tc.owner, FollowUp: tc.date, Action: tc.action}, now)
 		if tc.reason == "" && err != nil || tc.reason != "" && !errors.Is(err, failure{422, tc.reason}) {
 			t.Errorf("%+v: %v", tc, err)
+		}
+	}
+}
+
+func TestPlanEditsPreserveOriginalEvidence(t *testing.T) {
+	now := time.Date(2026, 11, 24, 12, 0, 0, 0, time.UTC)
+	board := Board{Changes: make(map[string]Account)}
+	plan := Command{Type: "plan", Owner: "First owner", Action: "resolveIssue", FollowUp: "2026-11-25"}
+	apply := func(cmd Command) {
+		t.Helper()
+		if err := board.apply("cove", board.Version, cmd, now); err != nil {
+			t.Fatal(err)
+		}
+	}
+	apply(plan)
+	saved := board.Changes["cove"].Plan.SavedAt
+	apply(Command{Type: "resolve"})
+	now = now.Add(time.Hour)
+	plan.Owner = "New owner"
+	apply(plan)
+	edited := board.Changes["cove"].Plan
+	if edited.Evidence != "cove" || edited.SavedAt != saved || edited.Owner != plan.Owner {
+		t.Fatalf("edited plan: %+v", edited)
+	}
+	apply(Command{Type: "complete"})
+	apply(plan)
+	fresh := board.Changes["cove"].Plan
+	if fresh.Evidence != "coveResolved" || fresh.SavedAt == saved {
+		t.Fatalf("new plan: %+v", fresh)
+	}
+}
+
+func TestResetAndRequestWindowExpiry(t *testing.T) {
+	now := time.Date(2026, 11, 24, 12, 0, 0, 0, time.UTC)
+	board := Board{}
+	limit := writeLimit{perPeer: 1, perInstance: 1}
+	for _, at := range []time.Time{now, now.Add(time.Minute)} {
+		if err := board.reset(at); err != nil {
+			t.Fatal(err)
+		}
+		if delay := limit.check("127.0.0.1:1234", at); delay != 0 {
+			t.Fatal(delay)
+		}
+		beforeExpiry := at.Add(time.Minute - time.Second)
+		if err := board.reset(beforeExpiry); err != retryAfter(time.Second) {
+			t.Fatalf("reset cooldown: %v", err)
+		}
+		if delay := limit.check("127.0.0.1:1234", beforeExpiry); delay != retryAfter(time.Second) {
+			t.Fatalf("request window: %v", delay)
 		}
 	}
 }

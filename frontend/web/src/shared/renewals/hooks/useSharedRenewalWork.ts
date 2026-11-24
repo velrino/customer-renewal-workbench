@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { API } from '@/shared/api/api.request'
+import { useEnvironment } from '@/shared/api/environment'
 import { ApiError } from '@/shared/api/api.resources'
 import type { Account } from '../accounts'
 import { WorkflowError, type Changes, type Command, type Failure } from '../workflow'
@@ -8,7 +9,7 @@ import type { AccountCommand } from './useRenewalWork'
 function reason(error: unknown): Failure {
   if (error instanceof ApiError) {
     switch (error.reason) {
-      case 'ownerRequired': case 'invalidDate': case 'questionRequired': case 'full': case 'changed':
+      case 'ownerRequired': case 'invalidDate': case 'questionRequired': case 'full': case 'changed': case 'rateLimited':
         return error.reason
     }
   }
@@ -17,7 +18,9 @@ function reason(error: unknown): Failure {
 
 export function useSharedRenewalWork() {
   const [changes, setChanges] = useState<Changes>({})
-  const [ready, setReady] = useState(false)
+  const { availability } = useEnvironment()
+  const [snapshotReady, setReady] = useState(false)
+  const ready = snapshotReady && availability === 'available'
   const [readError, setReadError] = useState(false)
   const [attempt, retry] = useState(0)
   useEffect(() => {

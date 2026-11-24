@@ -16,7 +16,9 @@ Run `pnpm dev` from the root to start both services. Next.js refreshes frontend 
 
 ## Shared workbench
 
-The API commits changes to `workbenches/shared` in one Firestore transaction. The frontend listens to that document. An empty database starts with the six sample accounts and zero saved changes. Reset restores that initial view for all API users.
+The API commits changes to `workbenches/shared` in one Firestore transaction. The frontend listens to that document. An empty database starts with the six sample accounts and zero saved changes. Reset restores that initial view for all API users. A successful reset starts a 60-second cooldown stored in the same transaction. Commands can still be saved during the cooldown.
+
+Each API instance admits up to 30 commands and 3 reset attempts per network peer in a fixed one-minute window, with ceilings of 120 commands and 12 reset attempts across all peers. Rejections return HTTP 429 with a `Retry-After` delay in seconds. Peers behind a proxy can share a quota because the service uses the socket address. Restarts clear the in-memory counters. The reset cooldown applies across instances running this version. Drain previous revisions when rolling out, since older writers replace the board without preserving the cooldown.
 
 For isolated local development, install Firebase CLI and Java 21, then run this from the repository root in one terminal:
 
@@ -32,13 +34,13 @@ FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST=127.0
 pnpm dev
 ```
 
-Select **API** under **User menu → Environment**. The local API uses port 8080. Its emulator health check reads the shared document and also accepts an empty database. In Cloud Run, the existing health check reads database metadata.
+Select **Shared API** under **User menu → Environment**. The local API uses port 8080. Its emulator health check reads the shared document and also accepts an empty database. In Cloud Run, the existing health check reads database metadata.
 
 ### Production setup
 
 Deploy the Firestore rules from the repository root using `firebase deploy --only firestore:rules --config infra/firebase/firebase.json --project customer-renewal-workbench`. The rules grant public single-document reads on the synthetic workbench. Browser clients cannot list documents or write to Firestore.
 
-Grant the Cloud Run runtime identity `datastore.databases.getMetadata`, `datastore.databases.get`, and `datastore.entities.get`, `datastore.entities.create`, `datastore.entities.update` on the intended database. The service uses its attached identity for transactions. Deploy the Go service and build the frontend against the same project. The frontend defaults to the project above and supports build-time overrides through `NEXT_PUBLIC_FIRESTORE_PROJECT_ID` and `NEXT_PUBLIC_API_ORIGIN`. [Firestore IAM permissions](https://firebase.google.com/docs/firestore/security/iam)
+Grant the Cloud Run runtime identity `datastore.databases.getMetadata`, `datastore.databases.get`, and `datastore.entities.get`, `datastore.entities.create`, `datastore.entities.update` on the intended database. The service uses its attached identity for transactions. Deploy the Go service and build the frontend against the same project. The frontend defaults to the project above and supports build-time overrides through `NEXT_PUBLIC_FIRESTORE_PROJECT_ID` and `NEXT_PUBLIC_API_ORIGIN`. When using a named database, set `FIRESTORE_DATABASE` on the API and `NEXT_PUBLIC_FIRESTORE_DATABASE` at frontend build time to the same ID. Set the matching database in `infra/firebase/firebase.json` and deploy its rules before enabling the frontend. [Firestore IAM permissions](https://firebase.google.com/docs/firestore/security/iam)
 
 ## Error reporting
 
