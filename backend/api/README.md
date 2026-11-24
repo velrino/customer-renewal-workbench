@@ -12,7 +12,7 @@ export FIRESTORE_DATABASE='(default)'
 pnpm dev --filter=renewal-workbench-api
 ```
 
-Run `pnpm dev` from the root to start both the API and frontend. The server listens on port 8080 by default. Use `PORT` to change it and `APP_ENV` to label the environment. Local runs use Application Default Credentials. Keep credential files outside the checkout. Cloud Run uses its attached runtime identity.
+Run `pnpm dev` from the root to start both services. Next.js refreshes frontend edits in the browser. Turbo starts Air for the backend. Air recompiles and restarts the Go process when its source, module files, OpenAPI contract or Scalar page changes. The first run downloads the pinned Air version through Go. Reload the docs tab to see those changes. The server listens on port 8080 by default. Use `PORT` to change it and `APP_ENV` to label the environment. Local runs use Application Default Credentials. Keep credential files outside the checkout. Cloud Run uses its attached runtime identity.
 
 ## Shared workbench
 

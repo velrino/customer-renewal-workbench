@@ -2,6 +2,6 @@
   "name": "renewal-workbench-api",
   "private": true,
   "scripts": {
-    "dev": "go run ./cmd/api"
+    "dev": "go run github.com/air-verse/air@v1.67.4 -c .air.toml"
   }
 }
