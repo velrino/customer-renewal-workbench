@@ -2,7 +2,24 @@
 
 **TL;DR** — A Customer Success manager oversees 40 accounts and can help two this week. This Hacker Eval prototype uses six fictional B2B accounts to show how the manager can review renewal evidence, choose interventions, and assign follow-ups. The head of Customer Success is the buyer.
 
-[Live dashboard](https://customer-renewal-workbench.vercel.app/) · [Account queue](https://customer-renewal-workbench.vercel.app/#account-queue) · [Frontend guide](frontend/web/README.md) · [Architecture](#architecture) · [Renewal flows](#renewal-flows) · [Decision trade-offs](#decision-trade-offs) · [Monthly costs](#monthly-costs) · [Project plan](docs/PLANS/0-START/plan.excalidraw) · [Plan preview](docs/PLANS/0-START/plan.svg)
+[Live dashboard](https://customer-renewal-workbench.vercel.app/) · [Account queue](https://customer-renewal-workbench.vercel.app/#account-queue) · [Frontend guide](frontend/web/README.md) · [Project plan](docs/PLANS/0-START/plan.excalidraw) · [Plan preview](docs/PLANS/0-START/plan.svg)
+
+## Table of contents
+
+- [Architecture](#architecture)
+  - [Local and shared writes](#local-and-shared-writes)
+- [Run locally](#run-locally)
+- [Renewal flows](#renewal-flows)
+- [Starting portfolio](#starting-portfolio)
+- [Decision rules](#decision-rules)
+- [Reviewer walkthrough](#reviewer-walkthrough)
+- [Persistence and scope](#persistence-and-scope)
+- [Decision trade-offs](#decision-trade-offs)
+  - [Product and workflow](#product-and-workflow)
+  - [Browser and shared data](#browser-and-shared-data)
+  - [Delivery and operations](#delivery-and-operations)
+- [Monthly costs](#monthly-costs)
+- [Verification and attribution](#verification-and-attribution)
 
 ## Architecture
 
