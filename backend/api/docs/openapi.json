@@ -4,9 +4,22 @@
     "title": "Customer Renewal Workbench API",
     "version": "1.1.0"
   },
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Service availability and Firestore dependency checks."
+    },
+    {
+      "name": "Renewals",
+      "description": "Account updates and reset operations for the shared renewal workbench."
+    }
+  ],
   "paths": {
     "/": {
       "get": {
+        "tags": [
+          "Health"
+        ],
         "operationId": "getHealth",
         "summary": "Check service health",
         "description": "Checks that the Firestore Admin API can return metadata for the configured database within three seconds. Document reads and writes are outside this check. Each instance caches healthy reads for 60 seconds and failures for five seconds. Response times are in milliseconds.",
@@ -36,6 +49,9 @@
     },
     "/workbench/accounts/{account}/commands": {
       "post": {
+        "tags": [
+          "Renewals"
+        ],
         "operationId": "applyAccountCommand",
         "summary": "Update a shared account",
         "description": "Send the account revision from the latest snapshot (zero for an untouched account). Plan dates use the supplied IANA time zone. A transaction enforces the two-slot limit. Only Cove has a critical issue to resolve. Completing a plan frees its slot.",
@@ -136,6 +152,9 @@
     },
     "/workbench/reset": {
       "post": {
+        "tags": [
+          "Renewals"
+        ],
         "operationId": "resetSharedWorkbench",
         "summary": "Reset the shared demo for everyone",
         "description": "Send the board version from the latest snapshot. Clears plans, questions and owner actions for all six accounts in one transaction. Invalidates drafts opened before the reset.",
