@@ -29,16 +29,11 @@ import {
   renewalDate,
   signalsConflict,
   sortedQueue,
-  type Action,
+  suggestedAction,
 } from '@/shared/renewals/workflow'
 
 const focusTitle = (node: HTMLHeadingElement | null) => {
   node?.focus()
-}
-const recommendedAction: Record<string, Action> = {
-  cove: 'resolveIssue',
-  ember: 'budget',
-  beacon: 'reconnect',
 }
 function followUpFor(days: number) {
   const suggested = '2026-11-25'
@@ -102,7 +97,7 @@ export function Dashboard({
           revision: changes[item.id]?.revision ?? 0,
           command: {
             type: 'plan' as const,
-            action: recommendedAction[item.id] ?? 'checkIn',
+            action: suggestedAction(item, changes[item.id]),
             owner: 'Capacity check',
             followUp: followUpFor(item.days),
           },
@@ -442,6 +437,8 @@ export function Dashboard({
                     work={changes[account.id]}
                     save={save}
                     ready={ready}
+                    readError={readError}
+                    retry={refresh}
                     used={allocated.length}
                   />
                 </>
