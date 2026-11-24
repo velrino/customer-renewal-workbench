@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createRecordStore } from '@/shared/storage/indexed-db'
 import type { Account } from '../accounts'
 import {
@@ -19,6 +19,7 @@ function saveCommand({ account, revision, command }: AccountCommand) {
 }
 
 export function useRenewalWork() {
+  const channel = useRef<BroadcastChannel | null>(null)
   const [changes, setChanges] = useState<Changes>({})
   const [readError, setReadError] = useState(false)
   const [ready, setReady] = useState(false)
@@ -34,17 +35,28 @@ export function useRenewalWork() {
   }, [])
   useEffect(() => {
     void refresh()
-    const channel =
-      typeof BroadcastChannel === 'function'
-        ? new BroadcastChannel(databaseName)
-        : null
-    if (channel) channel.onmessage = refresh
+    try {
+      if (typeof BroadcastChannel === 'function') {
+        channel.current = new BroadcastChannel(databaseName)
+        channel.current.onmessage = refresh
+      }
+    } catch {
+      // Focus refresh also works when the browser restricts messaging.
+    }
     window.addEventListener('focus', refresh)
     return () => {
-      channel?.close()
+      channel.current?.close()
+      channel.current = null
       window.removeEventListener('focus', refresh)
     }
   }, [refresh])
+  function publish() {
+    try {
+      channel.current?.postMessage('updated')
+    } catch {
+      // The write has committed. Other tabs can still refresh on focus.
+    }
+  }
   async function save(account: Account, revision: number, command: Command) {
     try {
       setChanges(await saveCommand({ account, revision, command }))
@@ -74,11 +86,4 @@ export function useRenewalWork() {
     }))
   }
   return { changes, save, saveTwo, ready, readError, refresh }
-}
-
-function publish() {
-  if (typeof BroadcastChannel !== 'function') return
-  const channel = new BroadcastChannel(databaseName)
-  channel.postMessage('updated')
-  channel.close()
 }

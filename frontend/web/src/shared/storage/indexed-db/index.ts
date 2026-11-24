@@ -14,7 +14,9 @@ export function createRecordStore<T extends { id: string }>(
         request.onerror = () => reject(request.error)
         request.onsuccess = () => {
           const db = request.result
+          db.onclose = () => { connection = undefined }
           db.onversionchange = () => {
+            db.onclose = null
             db.close()
             connection = undefined
           }
