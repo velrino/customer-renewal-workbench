@@ -13,6 +13,8 @@ pnpm dev --filter=renewal-workbench-web
 
 Open the [dashboard at `/`](http://127.0.0.1:3000/). Run `pnpm typecheck`, `pnpm test`, and `pnpm build` from the repository root. The production build exports static files to `frontend/web/out/`.
 
+The dashboard checks the API on port 8080 on loopback and uses the hosted Cloud Run API elsewhere. To run both services on your machine with the API on another port, use `PORT=8081 NEXT_PUBLIC_API_ORIGIN=http://127.0.0.1:8081 pnpm dev`. For a static deployment, set `NEXT_PUBLIC_API_ORIGIN` before `pnpm build` and rebuild the frontend when the origin changes.
+
 ## Folder structure
 
 | Folder | What belongs here |

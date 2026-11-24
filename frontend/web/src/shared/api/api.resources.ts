@@ -6,7 +6,7 @@ export const ApiResources = {
     const origin = local
       ? 'http://127.0.0.1:8080'
       : 'https://renewal-api-809086370856.us-central1.run.app'
-    const response = await fetch(new URL(path, origin), {
+    const response = await fetch(new URL(path, process.env.NEXT_PUBLIC_API_ORIGIN || origin), {
       method, signal, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer',
     })
     if (!response.ok) throw new Error(`Health request failed (HTTP ${response.status})`)

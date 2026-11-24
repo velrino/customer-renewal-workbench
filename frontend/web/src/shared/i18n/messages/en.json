@@ -7,13 +7,13 @@
     "accounts": "Account queue",
     "toggle": "Toggle sidebar",
     "close": "Close",
-    "environment": "Environment",
+    "environment": "Preferred environment",
     "local": "Local",
     "api": "API",
     "environmentHint": {
-      "checking": "Checking API availability. You can keep working locally.",
+      "checking": "Using Local while checking API availability.",
       "available": "API is available. Account changes are saved in this browser.",
-      "unavailable": "API is unavailable. You can keep working locally."
+      "unavailable": "API is unavailable. The dashboard is using Local."
     },
     "reset": "Reset workbench",
     "resetTitle": "Reset this workbench?",
