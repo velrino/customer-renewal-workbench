@@ -9,7 +9,7 @@
     "close": "Close",
     "environment": "Preferred environment",
     "local": "Local",
-    "api": "Shared API",
+    "api": "API",
     "environmentHint": {
       "checking": "Using Local while checking API availability.",
       "available": "In API mode, everyone can see changes and reset the shared demo.",
