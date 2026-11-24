@@ -9,7 +9,7 @@
     "close": "Close",
     "environment": "Preferred environment",
     "local": "Local",
-    "api": "API",
+    "api": "Shared API",
     "environmentHint": {
       "checking": "Using Local while checking API availability.",
       "available": "In API mode, everyone can see changes and reset the shared demo.",
@@ -21,6 +21,7 @@
     "resetSharedDescription": "This clears all plans, requests and owner updates in the shared demo for everyone, and frees both weekly slots.",
     "resetCancel": "Cancel",
     "resetPending": "Resetting…",
+    "resetRateLimited": "Too many reset requests.",
     "resetError": "The reset did not finish. Check the current portfolio and try again.",
     "userMenu": "User menu",
     "github": "GitHub",
@@ -31,6 +32,9 @@
     "dark": "Dark",
     "system": "Use device setting",
     "overview": "Overview"
+  },
+  "rateLimit": {
+    "retryAfter": "Try again in {seconds, plural, one {# second} other {# seconds}}."
   },
   "textField": {
     "count": "{current} of {total} characters"
@@ -165,11 +169,13 @@
       "ownerRequired": "Enter the name of the person responsible for this intervention.",
       "questionRequired": "Write the question you need answered.",
       "full": "Both weekly slots are in use. Complete an active intervention to free a slot.",
+      "rateLimited": "Too many updates.",
       "changed": "This account has changed. Reopen its details before trying again.",
       "storage": "The update could not be confirmed. Check the current account and try again."
     },
     "storageError": "Couldn’t load the latest work for this environment. Try again.",
     "retry": "Retry",
+    "sharedOffline": "The shared API is unavailable. Keep this account open to resume when it reconnects.",
     "unavailable": "Loading saved work…",
     "capacityNames": "Allocated to {names}",
     "noReview": "No accounts are flagged for review.",

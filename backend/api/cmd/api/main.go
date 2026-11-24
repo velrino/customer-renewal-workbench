@@ -31,6 +31,13 @@ func main() {
 	}
 	routes := app.Routes(environment, reporter.FirestoreCheck(check))
 	renewals.Register(routes, store.Update)
-	server := http.Server{Addr: ":" + setting("PORT", "8080"), Handler: reporter.HTTP(routes), ReadHeaderTimeout: 5 * time.Second, WriteTimeout: 10 * time.Second, IdleTimeout: time.Minute}
+	server := http.Server{
+		Addr:              ":" + setting("PORT", "8080"),
+		Handler:           reporter.HTTP(routes),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       5 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       time.Minute,
+	}
 	log.Fatal(server.ListenAndServe())
 }

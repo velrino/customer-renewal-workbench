@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useLayoutEffect, useState, type ReactNode } from 'react'
 import { preferenceKeys } from '@/shared/storage/local-storage/preferences'
 import { usePreferenceRecord } from '@/shared/storage/local-storage/preferences/use-preference-record'
 import { API } from './api.request'
@@ -12,11 +12,13 @@ const EnvironmentContext = createContext<{
   environment: Environment
   preferredEnvironment: Environment
   availability: Availability
+  setHeldEnvironment: (value: Environment | null) => void
   select: (value: string) => void
 } | null>(null)
 
 export function EnvironmentProvider({ children }: { children: ReactNode }) {
   const { prefs, update } = usePreferenceRecord(preferenceKeys.environment)
+  const [heldEnvironment, setHeldEnvironment] = useState<Environment | null>(null)
   const [availability, setAvailability] = useState<Availability>('checking')
 
   useEffect(() => {
@@ -62,18 +64,28 @@ export function EnvironmentProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const preferredEnvironment = prefs.selected === 'api' ? 'api' : 'local'
-  const environment = availability === 'available' ? preferredEnvironment : 'local'
+  const environment = heldEnvironment ?? (availability === 'available' ? preferredEnvironment : 'local')
   function select(value: string) {
     if (value === 'local' || (value === 'api' && availability === 'available')) {
       update({ selected: value })
     }
   }
 
-  return <EnvironmentContext.Provider value={{ environment, preferredEnvironment, availability, select }}>{children}</EnvironmentContext.Provider>
+  return <EnvironmentContext.Provider value={{ environment, preferredEnvironment, availability, select, setHeldEnvironment }}>{children}</EnvironmentContext.Provider>
 }
 
 export function useEnvironment() {
   const context = useContext(EnvironmentContext)
   if (!context) throw new Error('EnvironmentProvider is required')
   return context
+}
+
+// Keep an open editor or reset confirmation attached to its original data store.
+export function useHoldEnvironment(open: boolean) {
+  const { environment, setHeldEnvironment } = useEnvironment()
+  useLayoutEffect(() => {
+    if (!open) return
+    setHeldEnvironment(environment)
+    return () => setHeldEnvironment(null)
+  }, [open, environment, setHeldEnvironment])
 }

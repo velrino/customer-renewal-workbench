@@ -5,6 +5,7 @@ go 1.27.4
 require (
 	cloud.google.com/go/firestore v1.21.0
 	github.com/getsentry/sentry-go v0.50.0
+	github.com/ninepeach/go-ratelimit v1.0.0
 	google.golang.org/grpc v1.83.1
 )
 

@@ -45,3 +45,42 @@ func TestResetWithoutBodyUsesCurrentBoard(t *testing.T) {
 		t.Fatalf("reset returned %d, board = %+v", out.Code, board)
 	}
 }
+
+func TestResetQuotaDoesNotBlockCommandsOrPreflight(t *testing.T) {
+	mux := http.NewServeMux()
+	calls := 0
+	Register(mux, func(context.Context, func(*Board) error) error { calls++; return nil })
+	reset := "/workbench/reset"
+	for i := range 4 {
+		out := httptest.NewRecorder()
+		mux.ServeHTTP(out, httptest.NewRequest("POST", reset, nil))
+		if i < 3 && out.Code != 204 {
+			t.Fatalf("reset %d: %d", i, out.Code)
+		}
+		if i == 3 && (out.Code != 429 || out.Header().Get("Access-Control-Allow-Origin") != "*" || out.Header().Get("Access-Control-Expose-Headers") != "Retry-After") {
+			t.Fatalf("throttled reset: %d %v", out.Code, out.Header())
+		}
+	}
+	preflight := httptest.NewRecorder()
+	mux.ServeHTTP(preflight, httptest.NewRequest("OPTIONS", reset, nil))
+	command := httptest.NewRequest("POST", "/workbench/accounts/cove/commands", strings.NewReader(`{"revision":0,"timeZone":"UTC","command":{"type":"resolve"}}`))
+	command.Header.Set("Content-Type", "application/json")
+	out := httptest.NewRecorder()
+	mux.ServeHTTP(out, command)
+	if preflight.Code != 204 || out.Code != 204 || calls != 4 {
+		t.Fatalf("preflight=%d command=%d store calls=%d", preflight.Code, out.Code, calls)
+	}
+}
+
+func TestResetCooldownAcrossHandlers(t *testing.T) {
+	board := Board{Changes: make(map[string]Account)}
+	for _, want := range []int{204, 429} {
+		mux := http.NewServeMux()
+		Register(mux, func(_ context.Context, mutate func(*Board) error) error { return mutate(&board) })
+		out := httptest.NewRecorder()
+		mux.ServeHTTP(out, httptest.NewRequest("POST", "/workbench/reset", nil))
+		if out.Code != want || board.Version != 1 || (want == 429 && !strings.Contains(out.Body.String(), "rateLimited")) {
+			t.Fatalf("reset: status %d, version %d, body %s", out.Code, board.Version, out.Body)
+		}
+	}
+}

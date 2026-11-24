@@ -3,9 +3,12 @@ import type { ApiRequest } from './api.interface'
 export class ApiError extends Error {
   readonly reason: string
 
-  constructor(reason: string) {
+  readonly retryAfterSeconds?: number
+
+  constructor(reason: string, retryAfterSeconds?: number) {
     super(reason)
     this.reason = reason
+    this.retryAfterSeconds = retryAfterSeconds
   }
 }
 
@@ -22,7 +25,9 @@ export const ApiResources = {
     })
     if (!response.ok) {
       const error = await response.json().catch(() => null)
-      throw new ApiError(typeof error?.reason === 'string' ? error.reason : 'storage')
+      const delay = Number(response.headers.get('Retry-After'))
+      const retryAfterSeconds = response.status === 429 && Number.isSafeInteger(delay) && delay > 0 ? delay : undefined
+      throw new ApiError(typeof error?.reason === 'string' ? error.reason : 'storage', retryAfterSeconds)
     }
     if (response.status === 204) return
     return response.json()

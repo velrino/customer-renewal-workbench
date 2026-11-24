@@ -51,7 +51,7 @@ Start in a fresh browser profile and skip or finish the quick tour.
 
 ## Persistence and scope
 
-**Local** saves work in IndexedDB for the current browser. **API**, available under **User menu → Environment**, shares the six accounts across browsers. The dashboard listens to Firestore and sends every change to the Go API. Both modes check account revisions and enforce the two-slot limit transactionally.
+**Local** saves work in IndexedDB for the current browser. **Shared API**, available under **User menu → Environment**, shares the six accounts across browsers. The dashboard listens to Firestore and sends every change to the Go API. Both modes check account revisions and enforce the two-slot limit transactionally.
 
 **Reset workbench** restores the starting portfolio in the selected environment. In API mode it clears everyone’s plans, questions and owner updates after confirmation. The Local portfolio stays separate when switching modes or falling back to Local. The shared demo is public and intended for fictional data.
 

@@ -26,8 +26,9 @@ type Account struct {
 	Information   string `firestore:"information,omitempty"`
 }
 type Board struct {
-	Version int64              `firestore:"version"`
-	Changes map[string]Account `firestore:"changes"`
+	LastResetAt time.Time          `firestore:"lastResetAt,omitempty"`
+	Version     int64              `firestore:"version"`
+	Changes     map[string]Account `firestore:"changes"`
 }
 type Command struct {
 	Type     string `json:"type"`
@@ -80,12 +81,15 @@ func (b *Board) apply(id string, revision int64, cmd Command, now time.Time) err
 			if used >= 2 {
 				return failure{409, "full"}
 			}
+			evidence := id
+			if id == "cove" && work.IssueResolved {
+				evidence = "coveResolved"
+			}
+			work.Plan = &Plan{Status: "active", Evidence: evidence, SavedAt: now.UTC().Format(time.RFC3339Nano)}
 		}
-		evidence := id
-		if id == "cove" && work.IssueResolved {
-			evidence = "coveResolved"
-		}
-		work.Plan = &Plan{Status: "active", Action: cmd.Action, Owner: owner, FollowUp: cmd.FollowUp, Evidence: evidence, SavedAt: now.UTC().Format(time.RFC3339Nano)}
+		work.Plan.Action = cmd.Action
+		work.Plan.Owner = owner
+		work.Plan.FollowUp = cmd.FollowUp
 	case "information":
 		question := strings.TrimSpace(cmd.Question)
 		if question == "" || utf8.RuneCountInString(question) > 400 {
@@ -112,7 +116,17 @@ func (b *Board) apply(id string, revision int64, cmd Command, now time.Time) err
 	return nil
 }
 
-func (b *Board) reset() error {
+const resetCooldown = time.Minute
+
+type resetCooldownRemaining time.Duration
+
+func (resetCooldownRemaining) Error() string { return "reset is on cooldown" }
+
+func (b *Board) reset(now time.Time) error {
+	if remaining := b.LastResetAt.Add(resetCooldown).Sub(now); remaining > 0 {
+		return resetCooldownRemaining(remaining)
+	}
+	b.LastResetAt = now
 	b.Version++
 	// Revisions survive reset so an old form cannot resurrect a cleared plan.
 	b.Changes = make(map[string]Account, len(renewalDays))

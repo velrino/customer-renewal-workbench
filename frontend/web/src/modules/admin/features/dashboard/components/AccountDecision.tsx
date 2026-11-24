@@ -1,3 +1,4 @@
+import { useEnvironment } from '@/shared/api/environment'
 import { RelativeDate } from '@/shared/ui/relative-date'
 import * as Tabs from '@radix-ui/react-tabs'
 import { useId, useState, type ReactNode } from 'react'
@@ -51,6 +52,9 @@ export function AccountDecision({
   save: (account: Account, revision: number, command: Command) => Promise<void>
 }) {
   const t = useTranslations('dashboard')
+  const limit = useTranslations('rateLimit')
+  const { environment, availability } = useEnvironment()
+  const sharedUnavailable = environment === 'api' && availability !== 'available'
   const fmt = useFormatter()
   const ownerId = useId()
   const questionId = useId()
@@ -95,7 +99,10 @@ export function AccountDecision({
     } catch (e) {
       const reason = e instanceof WorkflowError ? e.reason : 'storage'
       setError(reason)
-      toast.error(t('errors.' + reason), { id: 'account-decision-error' })
+      toast.error(t('errors.' + reason), {
+        id: 'account-decision-error',
+        description: e instanceof WorkflowError && e.retryAfterSeconds ? limit('retryAfter', { seconds: e.retryAfterSeconds }) : undefined,
+      })
       const invalidField = { ownerRequired: ownerId, questionRequired: questionId, invalidDate: followUpId }
       if (reason === 'ownerRequired' || reason === 'questionRequired' || reason === 'invalidDate') {
         document.getElementById(invalidField[reason])?.focus()
@@ -309,7 +316,7 @@ export function AccountDecision({
       {readError && (
         <Button variant="outline" onClick={() => void retry()}>{t('retry')}</Button>
       )}
-      {!ready && !readError && <p role="status">{t('unavailable')}</p>}
+      {sharedUnavailable ? <p role="status">{t('sharedOffline')}</p> : !ready && !readError && <p role="status">{t('unavailable')}</p>}
     </div>
   )
 }

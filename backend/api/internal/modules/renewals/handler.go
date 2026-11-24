@@ -9,6 +9,8 @@ import (
 	"mime"
 	"net/http"
 	"time"
+
+	"renewal-api/internal/shared/ratelimit"
 )
 
 type updateBoard func(context.Context, func(*Board) error) error
@@ -16,8 +18,10 @@ type updateBoard func(context.Context, func(*Board) error) error
 func Register(mux *http.ServeMux, update updateBoard) {
 	commands := "/workbench/accounts/{account}/commands"
 	reset := "/workbench/reset"
-	mux.Handle("POST "+commands, writeHandler(update, false))
-	mux.Handle("POST "+reset, writeHandler(update, true))
+	commandQuota := ratelimit.PerMinute{PerPeer: 30, PerInstance: 120}
+	resetQuota := ratelimit.PerMinute{PerPeer: 3, PerInstance: 12}
+	mux.Handle("POST "+commands, publicWrite(commandQuota.Wrap(writeHandler(update, false))))
+	mux.Handle("POST "+reset, publicWrite(resetQuota.Wrap(writeHandler(update, true))))
 	for _, path := range []string{commands, reset} {
 		mux.HandleFunc("OPTIONS "+path, func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -28,11 +32,18 @@ func Register(mux *http.ServeMux, update updateBoard) {
 	}
 }
 
-func writeHandler(update updateBoard, reset bool) http.HandlerFunc {
+func publicWrite(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Cache-Control", "no-store")
-		mutate := (*Board).reset
+		w.Header().Set("Access-Control-Expose-Headers", "Retry-After")
+		next.ServeHTTP(w, r)
+	}
+}
+
+func writeHandler(update updateBoard, reset bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		mutate := func(b *Board) error { return b.reset(time.Now().UTC()) }
 		if reset {
 			if _, err := io.Copy(io.Discard, http.MaxBytesReader(w, r.Body, 0)); err != nil {
 				respondError(w, failure{400, "invalidRequest"})
@@ -72,6 +83,11 @@ func writeHandler(update updateBoard, reset bool) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 7*time.Second)
 		defer cancel()
 		if err := update(ctx, mutate); err != nil {
+			var delay resetCooldownRemaining
+			if errors.As(err, &delay) {
+				ratelimit.WriteRetryAfter(w, time.Duration(delay))
+				return
+			}
 			var f failure
 			if !errors.As(err, &f) {
 				slog.Warn("Shared workbench transaction failed", "error", err)

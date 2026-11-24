@@ -31,7 +31,7 @@ import { QueueSkeleton } from './components/DashboardSkeleton'
 import { RenewalOverview } from './components/RenewalOverview'
 
 import { AccountDecision } from './components/AccountDecision'
-import { useEnvironment } from '@/shared/api/environment'
+import { useEnvironment, useHoldEnvironment } from '@/shared/api/environment'
 import { useSharedRenewalWork } from '@/shared/renewals/hooks/useSharedRenewalWork'
 import { useRenewalWork } from '@/shared/renewals/hooks/useRenewalWork'
 import {
@@ -138,6 +138,7 @@ function DashboardView({ work, shared }: { work: ReturnType<typeof useRenewalWor
   }
   const fmt = useFormatter()
   const [account, setAccount] = useState<Account | null>(null)
+  useHoldEnvironment(account !== null)
   const opener = useRef<HTMLButtonElement | null>(null)
   const [barQueue, setBarQueue] = useState<{ label: string; members: Account[] } | null>(null)
   const [choosing, setChoosing] = useState(false)
