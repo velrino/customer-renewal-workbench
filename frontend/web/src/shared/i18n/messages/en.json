@@ -36,7 +36,9 @@
     "applyRange": "Apply range"
   },
   "dashboard": {
-    "evidenceReview": "Assessment",
+    "accountSections": "Account details",
+    "accountTabs": { "overview": "Overview", "plan": "Plan", "owner": "Owner actions" },
+    "noOwnerActions": "There are no open issues or active interventions for the owner to update.",
     "planDetails": "Intervention plan",
     "decisionBack": "Back",
     "selectDate": "Select a date",

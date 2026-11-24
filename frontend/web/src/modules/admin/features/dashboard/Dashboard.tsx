@@ -40,7 +40,6 @@ import {
   renewalDate,
   renewalWindowDays,
   today,
-  signalsConflict,
   sortedQueue,
   suggestedAction,
 } from '@/shared/renewals/workflow'
@@ -518,28 +517,6 @@ export function Dashboard() {
                       {t('detail', { name: account.name })}
                     </DialogDescription>
                   </DialogHeader>
-                  <dl className="grid grid-cols-2 gap-3 rounded-lg bg-muted/50 p-3 text-sm sm:grid-cols-3">
-                    {([
-                      [t('renewal'), <RelativeDate key="renewal" date={renewalDate(account.days, referenceDay)} referenceDay={referenceDay} showExact />],
-                      [t('value'), fmt.number(account.value, currency)],
-                      [t('adoptionDetail'), adoption(account)],
-                      [
-                        t('signal'),
-                        t(
-                          'signals.' +
-                            evidenceKey(account, changes[account.id]),
-                        ),
-                      ],
-                    ] as const).map(([name, value]) => (
-                      <div key={name} className={name === t('signal') ? 'col-span-full border-t pt-2' : undefined}>
-                        <dt className="text-muted-foreground">{name}</dt>
-                        <dd className="mt-1 font-medium">{value}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                  {signalsConflict(account, changes[account.id]) && (
-                    <p className="text-sm">{t('conflict')}</p>
-                  )}
                   {barQueue && <Button variant="outline" onClick={() => setAccount(null)}>{t('backToQueue')}</Button>}
                   <AccountDecision
                     key={account.id}
@@ -550,7 +527,27 @@ export function Dashboard() {
                     readError={readError}
                     retry={retryDashboard}
                     used={allocated.length}
-                  />
+                  >
+                    <dl className="grid grid-cols-2 gap-3 rounded-lg bg-muted/50 p-3 text-sm sm:grid-cols-3">
+                      {([
+                        [t('renewal'), <RelativeDate key="renewal" date={renewalDate(account.days, referenceDay)} referenceDay={referenceDay} showExact />],
+                        [t('value'), fmt.number(account.value, currency)],
+                        [t('adoptionDetail'), adoption(account)],
+                        [
+                          t('signal'),
+                          t(
+                            'signals.' +
+                              evidenceKey(account, changes[account.id]),
+                          ),
+                        ],
+                      ] as const).map(([name, value]) => (
+                        <div key={name} className={name === t('signal') ? 'col-span-full border-t pt-2' : undefined}>
+                          <dt className="text-muted-foreground">{name}</dt>
+                          <dd className="mt-1 font-medium">{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </AccountDecision>
                 </>
               )
             )}
