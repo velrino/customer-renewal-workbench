@@ -2,7 +2,12 @@
 
 **TL;DR** — A Customer Success manager oversees 40 accounts and can help two this week. This Hacker Eval prototype uses six fictional B2B accounts to show how the manager can review renewal evidence, choose interventions, and assign follow-ups. The head of Customer Success is the buyer.
 
-[Live dashboard](https://customer-renewal-workbench.vercel.app/) · [Account queue](https://customer-renewal-workbench.vercel.app/#account-queue) · [Frontend guide](frontend/web/README.md) · [Project plan](docs/PLANS/0-START/plan.excalidraw) · [Plan preview](docs/PLANS/0-START/plan.svg)
+- [Live dashboard](https://customer-renewal-workbench.vercel.app/)
+- [Account queue](https://customer-renewal-workbench.vercel.app/#account-queue)
+- [Live API](https://renewal-api-809086370856.us-central1.run.app/)
+- [Frontend guide](frontend/web/README.md)
+- [Project plan](docs/PLANS/0-START/plan.excalidraw)
+- [Plan preview](docs/PLANS/0-START/plan.svg)
 
 ## Table of contents
 
