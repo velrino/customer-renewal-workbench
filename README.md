@@ -9,6 +9,12 @@
 - [Project plan](docs/PLANS/0-START/plan.excalidraw)
 - [Plan preview · Delivered and At scale](docs/PLANS/0-START/plan.svg)
 
+## Demo video
+
+https://github.com/user-attachments/assets/f67b0f7e-6a50-4e8a-accd-0868d2c5e624
+
+[Open the demo video (MP4, 8.25 MB)](docs/DEMO/demo.mp4)
+
 ## Notes or demo credentials
 
 No account or credentials are required. On your first visit, choose **Watch a demo** for a Quick Tour followed by a walkthrough of one customer’s renewal, or **Take the Quick Tour** to learn where to find upcoming renewals and decide who needs a follow-up.
@@ -16,6 +22,7 @@ No account or credentials are required. On your first visit, choose **Watch a de
 ## Table of contents
 
 - [Notes or demo credentials](#notes-or-demo-credentials)
+- [Demo video](#demo-video)
 - [Architecture](#architecture)
   - [Local and shared writes](#local-and-shared-writes)
 - [Run locally](#run-locally)
