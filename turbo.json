@@ -9,6 +9,7 @@
       "dependsOn": [
         "^build"
       ],
+      "env": ["NEXT_PUBLIC_POSTHOG_ENABLED", "NEXT_PUBLIC_POSTHOG_HOST", "NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN"],
       "outputs": [
         "out/**"
       ]
