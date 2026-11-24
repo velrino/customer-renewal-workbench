@@ -124,7 +124,7 @@ One defensible choice is **Ember and Cove**. For Ember, identify the budget appr
 
 ## Reviewer walkthrough
 
-Start in a fresh browser profile and skip or finish the quick tour.
+Start in a fresh browser profile and select **Explore on my own** to follow the steps below.
 
 1. Open **Cove** and check its critical issue alongside 80% adoption and positive sponsor sentiment. Open **Drift**, verify **Unknown** adoption, and save an information request for a corrected usage report. The slot count stays at zero.
 2. Save a **Cove** intervention with an owner and a follow-up two days from today. Check that a missing owner blocks saving and the calendar disables dates after renewal. Reload and reopen the plan to verify the saved evidence, owner, and date.
