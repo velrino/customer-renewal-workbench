@@ -1,9 +1,13 @@
 'use client'
 
-import { BriefcaseBusiness, LayoutDashboard, List, X } from 'lucide-react'
+import { BriefcaseBusiness, ExternalLink, LayoutDashboard, UserRound, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
+import { SelectDropdown } from '@/shared/ui/select-dropdown'
 import { Button } from '@/shared/ui/button'
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/shared/ui/dialog'
+import { ResetWorkbenchDialog } from './ResetWorkbenchDialog'
 import { ThemeDialog } from '@/shared/ui/theme-dialog'
 import { Separator } from '@/shared/ui/separator'
 import {
@@ -19,13 +23,9 @@ import {
   useSidebar,
 } from '@/shared/ui/sidebar'
 
-export type DashboardView = 'dashboard' | 'accounts'
-const destinations = [
-  { id: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { id: 'accounts', href: '/dashboard/account-queue', icon: List },
-] as const
+const workbenchEnvironment: 'local' | 'api' = 'local'
 
-export function Navigation({ view }: { view: DashboardView }) {
+export function Navigation() {
   const t = useTranslations('nav')
   const { setOpenMobile, isMobile } = useSidebar()
   return (
@@ -37,7 +37,7 @@ export function Navigation({ view }: { view: DashboardView }) {
           </span>
           <div className="truncate text-sm group-data-[collapsible=icon]:hidden">
             <strong>{t('brand')}</strong>
-            <div className="text-xs">{t('team')}</div>
+            <div className="text-xs">{t(workbenchEnvironment)}</div>
           </div>
           {isMobile && (
             <Button
@@ -57,22 +57,14 @@ export function Navigation({ view }: { view: DashboardView }) {
           <SidebarGroup>
             <SidebarGroupLabel>{t('workspace')}</SidebarGroupLabel>
             <SidebarMenu>
-              {destinations.map(({ id, href, icon: Icon }) => (
-                <SidebarMenuItem key={id}>
-                  <SidebarMenuButton
-                    tooltip={t(id)}
-                    aria-label={t(id)}
-                    aria-current={view === id ? 'page' : undefined}
-                    isActive={view === id}
-                    asChild
-                  >
-                    <Link href={href} onClick={() => setOpenMobile(false)}>
-                      <Icon />
-                      <span>{t(id)}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip={t('dashboard')} aria-label={t('dashboard')} aria-current="page" isActive asChild>
+                  <Link href="/" onClick={() => setOpenMobile(false)}>
+                    <LayoutDashboard />
+                    <span>{t('dashboard')}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
         </nav>
@@ -81,16 +73,63 @@ export function Navigation({ view }: { view: DashboardView }) {
   )
 }
 
-export function Navbar({ view }: { view: DashboardView }) {
+export function Navbar({ onReset }: { onReset: () => Promise<void> }) {
   const t = useTranslations('nav')
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => {
+    function onEscape(event: KeyboardEvent) {
+      if (event.key !== 'Escape' || event.repeat || event.isComposing || event.defaultPrevented) return
+      // Check before an open overlay handles this same key and unmounts.
+      if (document.querySelector('[role="dialog"]:not([data-state="closed"]), [role="alertdialog"], [role="listbox"]:not([data-state="closed"]), [aria-roledescription="sortable"][aria-pressed="true"]')) return
+      event.preventDefault()
+      setMenuOpen(true)
+    }
+    window.addEventListener('keydown', onEscape, true)
+    return () => window.removeEventListener('keydown', onEscape, true)
+  }, [])
+
   return (
     <header className="flex h-16 items-center gap-4 px-4">
       <SidebarTrigger variant="outline" />
       <Separator orientation="vertical" className="max-h-6" />
       <span className="text-sm font-medium">
-        {t(view === 'dashboard' ? 'overview' : 'accounts')}
+        {t('overview')}
       </span>
       <ThemeDialog />
+      <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
+        <DialogTrigger asChild>
+          <Button variant="secondary" size="icon" className="rounded-full" aria-keyshortcuts="Escape" aria-label={t('userMenu')} title={t('userMenu')}>
+            <UserRound aria-hidden="true" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-sm" aria-describedby={undefined}>
+          <DialogTitle>{t('userMenu')}</DialogTitle>
+          <SelectDropdown
+            label={t('environment')}
+            description={t('environmentHint')}
+            value={workbenchEnvironment}
+            items={[
+              { value: 'local', label: t('local') },
+              { value: 'api', label: t('api'), disabled: true },
+            ]}
+          />
+          <ResetWorkbenchDialog onReset={onReset} />
+          <Separator />
+          {([
+            ['github', 'https://github.com/velrino/customer-renewal-workbench'],
+            ['author', 'https://github.com/velrino/'],
+          ] as const).map(([label, href]) => (
+            <Button key={label} variant="outline" className="justify-between" asChild>
+              <a href={href} target="_blank" rel="noopener noreferrer">
+                {t(label)}
+                <span className="sr-only">{t('opensNewTab')}</span>
+                <ExternalLink aria-hidden="true" />
+              </a>
+            </Button>
+          ))}
+        </DialogContent>
+      </Dialog>
     </header>
   )
 }

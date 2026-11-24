@@ -7,6 +7,7 @@ import {
   committed,
   planningCoverage,
   signalsConflict,
+  renewalDate,
   suggestedAction,
   type Changes,
 } from './index.ts'
@@ -22,7 +23,7 @@ function plan(account: typeof cove, owner = 'Alex Rivera') {
     type: 'plan',
     action: 'checkIn',
     owner,
-    followUp: '2026-11-25',
+    followUp: renewalDate(2),
   })
 }
 
@@ -52,7 +53,7 @@ test('an information request does not use a slot', () => {
 
 test('a plan without an owner leaves the record unchanged', () => {
   assert.throws(
-    () => applyCommand({}, cove, 0, { type: 'plan', action: 'resolveIssue', owner: ' ', followUp: '2026-11-25' }),
+    () => applyCommand({}, cove, 0, { type: 'plan', action: 'resolveIssue', owner: ' ', followUp: renewalDate(2) }),
     { reason: 'ownerRequired' },
   )
 })
@@ -63,24 +64,35 @@ test('the third commitment is rejected and an edit of an existing plan succeeds'
   const changes = { cove: first, ember: second }
   assert.equal(committed(changes).length, 2)
   assert.throws(
-    () => applyCommand(changes, beacon, 0, { type: 'plan', action: 'reconnect', owner: 'Alex Rivera', followUp: '2026-11-25' }),
+    () => applyCommand(changes, beacon, 0, { type: 'plan', action: 'reconnect', owner: 'Alex Rivera', followUp: renewalDate(2) }),
     { reason: 'full' },
   )
   const edited = applyCommand(changes, ember, second.revision, {
     type: 'plan',
     action: 'budget',
     owner: 'Sam Patel',
-    followUp: '2026-11-26',
+    followUp: renewalDate(3),
   })
   assert.equal(edited.plan?.owner, 'Sam Patel')
   assert.equal(committed({ ...changes, ember: edited }).length, 2)
+})
+
+test('completing an intervention removes the account from review while preserving its concern', () => {
+  for (const account of [ember, beacon, cove]) {
+    const saved = plan(account)
+    assert.equal(attention(account, saved), 'review')
+    const completed = applyCommand({ [account.id]: saved }, account, saved.revision, { type: 'complete' })
+    assert.equal(attention(account, completed), 'reviewed')
+    assert.equal(completed.plan?.evidence, saved.plan?.evidence)
+    assert.equal(committed({ [account.id]: completed }).length, 0)
+  }
 })
 
 test('resolving Cove moves attention to monitoring and keeps the follow-up', () => {
   const saved = plan(cove)
   const resolved = applyCommand({ cove: saved }, cove, saved.revision, { type: 'resolve' })
   assert.equal(resolved.issueResolved, true)
-  assert.equal(resolved.plan?.followUp, '2026-11-25')
+  assert.equal(resolved.plan?.followUp, renewalDate(2))
   assert.equal(attention(cove, resolved), 'monitor')
   assert.equal(signalsConflict(cove, resolved), false)
   const completed = applyCommand({ cove: resolved }, cove, resolved.revision, { type: 'complete' })

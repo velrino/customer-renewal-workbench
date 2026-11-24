@@ -85,5 +85,14 @@ export function useRenewalWork() {
           : undefined,
     }))
   }
-  return { changes, save, saveTwo, ready, readError, refresh }
+  async function resetWork() {
+    await records.clear()
+    setChanges({})
+    publish()
+  }
+  async function retryRead() {
+    setReadError(false)
+    await refresh()
+  }
+  return { changes, resetWork, save, saveTwo, ready, readError, retryRead }
 }

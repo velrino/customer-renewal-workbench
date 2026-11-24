@@ -1,4 +1,5 @@
 import './globals.css'
+import { ScrollToTop } from './ScrollToTop'
 import { Providers } from './providers'
 import { routing } from '@/shared/i18n/routing'
 import messages from '@/shared/i18n/messages/en.json'
@@ -12,6 +13,7 @@ export default function RootLayout({
   return (
     <html lang={routing.defaultLocale} suppressHydrationWarning>
       <body>
+        <ScrollToTop />
         <Providers>{children}</Providers>
       </body>
     </html>

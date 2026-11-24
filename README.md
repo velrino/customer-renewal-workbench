@@ -4,7 +4,7 @@
 
 This Hacker Eval prototype uses six fictional B2B software accounts. The buyer is the head of Customer Success. The app simulates the account owner’s follow-through.
 
-**Try the prototype** — [Open the dashboard](https://customer-renewal-workbench.vercel.app/dashboard) or [open the account queue](https://customer-renewal-workbench.vercel.app/dashboard/account-queue). Start with a fresh browser profile for the original six cases. Changes are saved in this browser and survive a reload. Open an account from the queue. The Accounts card on the dashboard also opens the same detail.
+**Try the prototype** — [Open the dashboard](https://customer-renewal-workbench.vercel.app/) or [open the account queue](https://customer-renewal-workbench.vercel.app/#account-queue). Start with a fresh browser profile for the original six cases. Changes are saved in this browser and survive a reload. Open an account from the queue. The Accounts card on the dashboard also opens the same detail.
 
 [Editable project plan](docs/PLANS/0-START/plan.excalidraw) · [Estimated monthly costs by user count](docs/COST/README.md)
 
@@ -12,7 +12,7 @@ This Hacker Eval prototype uses six fictional B2B software accounts. The buyer i
 
 ## Starting portfolio
 
-The prototype opens with six synthetic accounts. Annual contract value (ACV) is in USD. Renewal days are relative to the fixed sample day of November 23, 2026. Adoption is the percentage of licensed users active that week.
+The prototype opens with six synthetic accounts. Annual contract value (ACV) is in USD. The demo calculates renewal dates relative to today in the browser’s local time zone. Saved follow-up dates retain the calendar day the manager chose. Adoption is the percentage of licensed users active that week.
 
 | Account | ACV | Renews in | Weekly adoption | Other evidence |
 | --- | ---: | ---: | --- | --- |
@@ -39,18 +39,18 @@ Cove illustrates three distinct things the interface should show together:
 
 ## Reviewer walkthrough and acceptance checks
 
-Open the [public dashboard](https://customer-renewal-workbench.vercel.app/dashboard) in a fresh browser profile, or start the frontend locally using the setup below. Skip or finish the quick tour, then scroll to the account queue on the dashboard. The names below are the labels on the screen.
+Open the [public dashboard](https://customer-renewal-workbench.vercel.app/) in a fresh browser profile, or start the frontend locally using the setup below. Skip or finish the quick tour, then scroll to the account queue on the dashboard. The names below are the labels on the screen.
 
-1. Inspect **Cove**. Its critical issue, 80% adoption and positive sponsor are visible together, with the note that those signals conflict. Compare **Drift**. Its adoption says **Unknown**, and its signal says the usage report failed. Choose **Request information**, enter “Corrected weekly usage report”, and choose **Save information request**. The confirmation says no extra slot was used, and the count stays at zero. The request stays next to the evidence.
-2. Open Cove and choose **Plan an intervention**. The suggested action is **Coordinate a fix for the critical issue**. Choose **Save intervention** with no owner, then again with owner Sam and a follow-up after December 14, 2026. The errors ask for the responsible person and for a date inside the range shown above. The draft stays. Set the follow-up to November 25, 2026 and save. The count becomes one. Reload and reopen Cove. The agreed plan still shows the action, Sam, November 25, 2026, and the evidence from the time of the decision.
-3. Under **Account owner simulation**, choose **Mark critical issue resolved**. Cove changes from **Review now** to **Follow-up planned**. The current signal says the issue is resolved. The agreed plan still cites the open issue, and the slot stays in use. Leave this plan active.
-4. Open **Ember** and save **Confirm budget approval** with an owner and a follow-up on or before November 30, 2026. The count becomes two. Ember stays **Review now** because budget approval is still pending. Open **Beacon** and try to save a valid plan. The app says both weekly slots are in use. Choose **Edit intervention** on Ember, change the owner, and save. The count stays at two.
-5. Choose **Mark intervention complete** on Ember. One slot is free, and Ember remains **Review now**. Use **Try saving plans for Ember and Beacon**. The confirmation says Ember’s plan was saved and Beacon’s was not. The count returns to two of two. An independent browser profile shows the original six accounts and zero saved plans.
+1. Inspect **Cove**. Its critical issue, 80% adoption and positive sponsor are visible together on **Overview**. Compare **Drift**. Its adoption says **Unknown**, and its signal says the usage report failed. On **Plan**, choose **Request information**, enter “Corrected weekly usage report”, and choose **Save information request**. The confirmation says no extra slot was used, and the count stays at zero. The saved request appears on **Plan**.
+2. Open Cove, select **Plan**, and choose **Plan an intervention**. The suggested action is **Coordinate a fix for the critical issue**. Choose **Save intervention** with no owner. Enter Sam, then check that the calendar disables dates after Cove’s renewal. Choose a follow-up two days from today and save. The count becomes one. Reload, reopen Cove, and select **Plan**. The agreed plan still shows the action, Sam, the selected follow-up date, and the evidence from the time of the decision.
+3. On **Owner actions**, under **Account owner simulation**, choose **Mark critical issue resolved**. Cove changes from **Review now** to **Follow-up planned**. The current signal says the issue is resolved. The agreed plan still cites the open issue, and the slot stays in use. Leave this plan active.
+4. Open **Ember** and save **Confirm budget approval** with an owner and a follow-up within the next seven days. The count becomes two. Ember stays **Review now** because budget approval is still pending. Open **Beacon** and try to save a valid plan. The app says both weekly slots are in use. Choose **Edit intervention** on Ember, change the owner, and save. The count stays at two.
+5. Choose **Mark intervention complete** on Ember. One slot is free. Ember leaves **Review now** and appears in the queue as **Reviewed** with its pending budget approval still visible. Reload to confirm the status persists. Save a plan for Beacon to use the available slot. An independent browser profile shows the original six accounts and zero saved plans.
 6. Choose **Mark intervention complete** on Cove. Its status becomes **Routine review**, the completed plan remains visible, and a slot is free. Search for an absent name. The queue says “No accounts match your search or filters.” Choose **Show all accounts**. Scroll up to the dashboard cards. Open **Renewing within 30 days**, then **Remove 30-day renewal filter**. Press Escape to close an account dialog. Focus returns to the control that opened it.
 
 ## Decision rules
 
-An open critical issue warrants **Review now**. Pending budget approval warrants **Review now** when renewal is within 14 days inclusive. A decline of at least 30 percentage points in adoption warrants **Review now** when the sponsor is also unreachable. These review rules win over an open plan, so Ember stays **Review now** after a plan is saved while budget approval is pending. If no review rule matches, missing usage or unknown sentiment is **Needs information**. An active intervention is **Follow-up planned** only when no review rule still matches. Cove reaches that status after its critical issue is resolved and while its plan remains active. Completing that plan makes Cove **Routine review**. Atlas and Field start as **Routine review**. Within each attention group the queue sorts by earliest renewal. Contract value is not a tie-breaker. The manager chooses the interventions. Missing adoption stays **Unknown** and is not stored as zero. A hypothesis says what could or may be true and asks the manager to check it. It is not a prediction.
+An open critical issue warrants **Review now**. Pending budget approval warrants **Review now** when renewal is within 14 days inclusive. A decline of at least 30 percentage points in adoption warrants **Review now** when the sponsor is also unreachable. These review rules win over an open plan, so Ember stays **Review now** after a plan is saved while budget approval is pending. Completing the intervention moves the account to **Reviewed** while that signal persists. If no review rule matches, missing usage or unknown sentiment is **Needs information**. An active intervention is **Follow-up planned** only when no review rule still matches. Cove reaches that status after its critical issue is resolved and while its plan remains active. Completing that plan makes Cove **Routine review**. Atlas and Field start as **Routine review**. Within each attention group the queue sorts by earliest renewal. Contract value is not a tie-breaker. The manager chooses the interventions. Missing adoption stays **Unknown** and is not stored as zero. A hypothesis says what could or may be true and asks the manager to check it. It is not a prediction.
 
 ## Engineering choices and scope
 
@@ -68,15 +68,16 @@ The exercise uses synthetic data and explainable attention rules. Live analytics
 
 ## Setup, verification, and submission
 
-Run the frontend locally with Node.js 22.12+ and pnpm 10.
+From the repository root, start the frontend with Node.js 22.12+ and pnpm 10.
 
 ```sh
-cd frontend/web
 pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Run `pnpm typecheck`, `pnpm test`, and `pnpm build` from the same directory. The static build is written to `out/`. `pnpm test` checks the attention rules, the slot limit, an information request, a missing owner, and Cove after the issue is resolved.
+Open the [local dashboard](http://127.0.0.1:3000/).
+
+Run `pnpm typecheck`, `pnpm test`, and `pnpm build` from the repository root. Turborepo runs each task in the workspace packages that implement it. The frontend static build is written to `frontend/web/out/`. `pnpm test` checks the attention rules, the slot limit, an information request, a missing owner, and Cove after the issue is resolved.
 
 ### Verification
 
@@ -86,7 +87,7 @@ Codex ran `pnpm typecheck`, `pnpm test`, and `pnpm build` locally. All three pas
 
 AI assistance covered interface alternatives, the architecture diagram, implementation, documentation and scripted verification. The author directed the dashboard layout, modal behavior, theme options and phased frontend-first approach.
 
-[Public prototype](https://customer-renewal-workbench.vercel.app/dashboard) · [Local dashboard](http://127.0.0.1:3000/dashboard) · [Public repository](https://github.com/velrino/customer-renewal-workbench)
+[Public prototype](https://customer-renewal-workbench.vercel.app/) · [Local dashboard](http://127.0.0.1:3000/) · [Public repository](https://github.com/velrino/customer-renewal-workbench)
 
 ## Reviewing with an AI assistant
 
