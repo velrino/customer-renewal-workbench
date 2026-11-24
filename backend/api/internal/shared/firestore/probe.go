@@ -25,7 +25,7 @@ func (p *Probe) Check(ctx context.Context) error {
 		return ErrNotConfigured
 	}
 	client, err := p.databaseClient(func() (*admin.FirestoreAdminClient, error) {
-		return admin.NewFirestoreAdminClient(ctx)
+		return admin.NewFirestoreAdminClient(context.Background())
 	})
 	if err != nil {
 		return err

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -44,6 +45,28 @@ func (f failure) Error() string { return f.reason }
 
 var changed = failure{http.StatusConflict, "changed"}
 
+const weeklyCapacity = 2
+
+func validateText(raw string, limit int, missing, tooLong string) error {
+	checked := raw
+	if missing == "questionRequired" {
+		checked = strings.ReplaceAll(strings.ReplaceAll(checked, "\r\n", ""), "\n", "")
+	}
+	if strings.ContainsFunc(checked, func(r rune) bool {
+		return unicode.IsControl(r) || (unicode.In(r, unicode.Cf) && r != '\u200d' && r != '\u200c')
+	}) {
+		return failure{422, "invalidText"}
+	}
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return failure{422, missing}
+	}
+	if utf8.RuneCountInString(value) > limit {
+		return failure{422, tooLong}
+	}
+	return nil
+}
+
 func (b *Board) apply(id string, revision int64, cmd Command, now time.Time) error {
 	days, known := daysUntilRenewal(id)
 	if !known {
@@ -56,16 +79,18 @@ func (b *Board) apply(id string, revision int64, cmd Command, now time.Time) err
 	switch cmd.Type {
 	case "plan":
 		owner := strings.TrimSpace(cmd.Owner)
-		if owner == "" || utf8.RuneCountInString(owner) > 80 {
-			return failure{422, "ownerRequired"}
+		if err := validateText(cmd.Owner, 80, "ownerRequired", "ownerTooLong"); err != nil {
+			return err
 		}
 		switch cmd.Action {
 		case "resolveIssue", "budget", "reconnect", "adoption", "checkIn":
 		default:
 			return failure{422, "invalidAction"}
 		}
+		year, month, day := now.Date()
+		renewal := time.Date(year, month, day+days, 0, 0, 0, 0, time.UTC).Format(time.DateOnly)
 		date, err := time.Parse(time.DateOnly, cmd.FollowUp)
-		if err != nil || date.Format(time.DateOnly) != cmd.FollowUp || cmd.FollowUp < now.Format(time.DateOnly) || cmd.FollowUp > now.AddDate(0, 0, days).Format(time.DateOnly) {
+		if err != nil || date.Format(time.DateOnly) != cmd.FollowUp || cmd.FollowUp < now.Format(time.DateOnly) || cmd.FollowUp > renewal {
 			return failure{422, "invalidDate"}
 		}
 		if work.Plan == nil || work.Plan.Status != "active" {
@@ -75,7 +100,7 @@ func (b *Board) apply(id string, revision int64, cmd Command, now time.Time) err
 					used++
 				}
 			}
-			if used >= 2 {
+			if used >= weeklyCapacity {
 				return failure{409, "full"}
 			}
 			evidence := id
@@ -89,12 +114,15 @@ func (b *Board) apply(id string, revision int64, cmd Command, now time.Time) err
 		work.Plan.FollowUp = cmd.FollowUp
 	case "information":
 		question := strings.TrimSpace(cmd.Question)
-		if question == "" || utf8.RuneCountInString(question) > 400 {
-			return failure{422, "questionRequired"}
+		if err := validateText(cmd.Question, 400, "questionRequired", "questionTooLong"); err != nil {
+			return err
 		}
 		work.Information = question
 	case "resolve":
-		if id != "cove" || work.IssueResolved {
+		if id != "cove" {
+			return failure{422, "notApplicable"}
+		}
+		if work.IssueResolved {
 			return changed
 		}
 		work.IssueResolved = true

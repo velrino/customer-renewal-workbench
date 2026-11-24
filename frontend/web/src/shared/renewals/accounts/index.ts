@@ -72,6 +72,12 @@ export const currency = {
   maximumFractionDigits: 0,
 } as const
 
+export const renewalWindowDays = 30
+
 export function renewsSoon(account: Account) {
-  return account.days >= 0 && account.days <= 30
+  return account.days >= 0 && account.days <= renewalWindowDays
+}
+
+export function signalValues(account: Account) {
+  return { previous: account.previousAdoption ?? 0, current: account.adoption ?? 0 }
 }

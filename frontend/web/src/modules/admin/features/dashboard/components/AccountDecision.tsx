@@ -8,10 +8,11 @@ import { SelectDropdown } from '@/shared/ui/select-dropdown'
 import { TextField } from '@/shared/ui/text-field'
 import { DatePicker } from '@/shared/ui/date-picker'
 import { Button } from '@/shared/ui/button'
-import type { Account } from '@/shared/renewals/accounts'
+import { signalValues, type Account } from '@/shared/renewals/accounts'
 import {
   actions,
   attention,
+  capacity,
   evidenceKey,
   renewalDate,
   today,
@@ -37,6 +38,7 @@ export function AccountDecision({
   work,
   save,
   ready,
+  syncing,
   readError,
   retry,
   used,
@@ -46,6 +48,7 @@ export function AccountDecision({
   account: Account
   work?: AccountWork
   ready: boolean
+  syncing: boolean
   readError: boolean
   retry: () => Promise<void>
   used: number
@@ -53,7 +56,7 @@ export function AccountDecision({
 }) {
   const t = useTranslations('dashboard')
   const limit = useTranslations('rateLimit')
-  const { environment, availability } = useEnvironment()
+  const { environment, availability, preferredEnvironment, practice } = useEnvironment()
   const sharedUnavailable = environment === 'api' && availability !== 'available'
   const fmt = useFormatter()
   const ownerId = useId()
@@ -91,9 +94,9 @@ export function AccountDecision({
       await save(account, revision, command)
       setDraft(null)
       setEditing(false)
-      toast.success(t('confirmed.' + command.type), {
+      toast.success(t(!practice && environment === 'local' && preferredEnvironment === 'api' ? 'fallbackSaved' : 'confirmed.' + command.type), {
         description: command.type === 'complete' && status === 'review'
-          ? t('reviewCompleted', { name: account.name, signal: t('signals.' + evidenceKey(account, work)) })
+          ? t('reviewCompleted', { name: account.name, signal: t('signals.' + evidenceKey(account, work), signalValues(account)) })
           : undefined,
       })
     } catch (e) {
@@ -103,10 +106,9 @@ export function AccountDecision({
         id: 'account-decision-error',
         description: e instanceof WorkflowError && e.retryAfterSeconds ? limit('retryAfter', { seconds: e.retryAfterSeconds }) : undefined,
       })
-      const invalidField = { ownerRequired: ownerId, questionRequired: questionId, invalidDate: followUpId }
-      if (reason === 'ownerRequired' || reason === 'questionRequired' || reason === 'invalidDate') {
-        document.getElementById(invalidField[reason])?.focus()
-      }
+      const invalidField: Partial<Record<Failure, string>> = { ownerRequired: ownerId, ownerTooLong: ownerId, questionRequired: questionId, questionTooLong: questionId, invalidText: command.type === 'plan' ? ownerId : questionId, invalidDate: followUpId }
+      const field = invalidField[reason]
+      if (field) document.getElementById(field)?.focus()
     } finally {
       setBusy(false)
     }
@@ -148,7 +150,7 @@ export function AccountDecision({
                     <RelativeDate date={plan.followUp} referenceDay={referenceDay} showExact />
                   </p>
                   <p className="text-muted-foreground">
-                    {t('basis')} · {t('signals.' + plan.evidence)}
+                    {t('basis')} · {t('signals.' + plan.evidence, signalValues(account))}
                   </p>
                 </section>
               )}
@@ -158,7 +160,7 @@ export function AccountDecision({
                 </p>
               )}
               <p className="text-muted-foreground">
-                {t('used', { count: used })} ·{' '}
+                {t('used', { capacity, count: used })} ·{' '}
                 {t('sampleDate', { date: dateLabel(referenceDay) })}
               </p>
             </>
@@ -196,6 +198,7 @@ export function AccountDecision({
                 )
               }}
             >
+              {environment === 'api' && <p className="text-xs text-muted-foreground">{t('publicText')}</p>}
               {draft.mode === 'plan' && (
                 <>
                   <SelectDropdown
@@ -216,7 +219,7 @@ export function AccountDecision({
                       required
                       maxLength={80}
                       value={draft.owner}
-                      aria-invalid={error === 'ownerRequired'}
+                      aria-invalid={error === 'ownerRequired' || error === 'ownerTooLong' || error === 'invalidText'}
 
                       onValueChange={owner =>
                         setDraft({ ...draft, owner })
@@ -256,7 +259,7 @@ export function AccountDecision({
                     required
                     maxLength={400}
                     value={draft.question}
-                    aria-invalid={error === 'questionRequired'}
+                    aria-invalid={error === 'questionRequired' || error === 'questionTooLong' || error === 'invalidText'}
 
                     onValueChange={question =>
                       setDraft({ ...draft, question })
@@ -317,7 +320,7 @@ export function AccountDecision({
       {readError && (
         <Button variant="outline" onClick={() => void retry()}>{t('retry')}</Button>
       )}
-      {sharedUnavailable ? <p role="status">{t('sharedOffline')}</p> : !ready && !readError && <p role="status">{t('unavailable')}</p>}
+      {syncing && !sharedUnavailable ? <p role="status">{t('awaitingSnapshot')}</p> : sharedUnavailable ? <p role="status">{t('sharedOffline')}</p> : !ready && !readError && <p role="status">{t('unavailable')}</p>}
     </div>
   )
 }

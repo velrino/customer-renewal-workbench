@@ -6,5 +6,5 @@ export interface ApiRequest {
 }
 
 export interface ApiHealth {
-  status: 'ok' | 'degraded'
+  status: 'ok'
 }

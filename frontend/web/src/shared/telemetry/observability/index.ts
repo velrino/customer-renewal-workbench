@@ -1,7 +1,7 @@
-import { init } from '@sentry/nextjs'
-
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN
-if (typeof window !== 'undefined' && dsn) {
+export async function initializeObservability() {
+  if (!dsn) return
+  const { init } = await import('@sentry/nextjs')
   init({
     dsn,
     environment: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT || process.env.NODE_ENV,

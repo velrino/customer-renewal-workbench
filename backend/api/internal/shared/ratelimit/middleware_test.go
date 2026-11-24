@@ -35,3 +35,22 @@ func TestPeerAndInstanceBucketsRefillIndependently(t *testing.T) {
 		check("192.0.2.3:1001", 204, "")
 	})
 }
+
+func TestTrustedIngressIdentity(t *testing.T) {
+	for _, tc := range []struct {
+		hops            int
+		forwarded, want string
+	}{
+		{0, "192.0.2.2", "127.0.0.1"}, {1, "192.0.2.2, 198.51.100.8", "198.51.100.8"},
+		{1, "192.0.2.3, 198.51.100.8", "198.51.100.8"}, {1, "198.51.100.9", "198.51.100.9"},
+		{2, "198.51.100.8, 203.0.113.1", "198.51.100.8"}, {2, "203.0.113.1", "127.0.0.1"},
+		{1, "invalid", "127.0.0.1"}, {1, "2001:db8::abc", "2001:db8::/64"},
+	} {
+		req := httptest.NewRequest("GET", "/", nil)
+		req.RemoteAddr = "127.0.0.1:42"
+		req.Header.Set("X-Forwarded-For", tc.forwarded)
+		if got := peerAddress(req, tc.hops); got != tc.want {
+			t.Errorf("got %q, want %q", got, tc.want)
+		}
+	}
+}

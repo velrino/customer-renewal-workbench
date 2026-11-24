@@ -8,3 +8,4 @@ target/
 !/docs/openapi.json
 !/package.json
 !/turbo.json
+!/internal/modules/renewals/testdata/conformance.json

@@ -30,11 +30,12 @@ import {
   CardTitle,
   CardDescription,
 } from '@/shared/ui/card'
-import { currency, renewsSoon, type Account } from '@/shared/renewals/accounts'
+import { signalValues, currency, renewsSoon, type Account } from '@/shared/renewals/accounts'
 
 import {
   attention,
   committed,
+  capacity,
   evidenceKey,
   planningCoverage,
   renewalDate,
@@ -153,6 +154,7 @@ export function RenewalOverview({
                   <p className="text-2xl font-bold tracking-tight tabular-nums">
                     {key === 'capacity' ? (
                       t.rich('capacityCount', {
+                        capacity,
                         count: value,
                         number: () => <AnimatedNumber value={value} />,
                       })
@@ -235,7 +237,7 @@ export function RenewalOverview({
                         <strong className="block text-sm">{a.name}</strong>
                         <span className="block text-xs text-muted-foreground">
                           <RelativeDate date={renewalDate(a.days, referenceDay)} referenceDay={referenceDay} /> ·{' '}
-                          {t('signals.' + evidenceKey(a, changes[a.id]))}
+                          {t('signals.' + evidenceKey(a, changes[a.id]), signalValues(a))}
                         </span>
                       </span>
                       <ChevronRight className="size-4 text-muted-foreground" />

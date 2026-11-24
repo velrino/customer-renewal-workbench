@@ -91,7 +91,7 @@ export function Navigation({ openUserMenu }: { openUserMenu: () => void }) {
 
 export function Navbar({ title, onReset, onDemo }: { title?: string; onReset?: () => Promise<void>; onDemo?: () => void }) {
   const t = useTranslations('nav')
-  const { environment, preferredEnvironment, availability, select } = useEnvironment()
+  const { environment, preferredEnvironment, availability, select, practice } = useEnvironment()
   const menuId = useId()
   const environmentHint = availability === 'available' ? preferredEnvironment : availability
 
@@ -102,6 +102,7 @@ export function Navbar({ title, onReset, onDemo }: { title?: string; onReset?: (
       <span className="text-sm font-medium">
         {title ?? t('overview')}
       </span>
+      <span className="text-xs text-muted-foreground" aria-live="polite">{t(practice ? 'practice' : environment)}</span>
       <ThemeDialog />
       <DialogTrigger asChild>
         <Button variant="secondary" size="icon" className="rounded-full" aria-keyshortcuts="Escape" aria-label={t('userMenu')} title={t('userMenu')}>
@@ -111,7 +112,7 @@ export function Navbar({ title, onReset, onDemo }: { title?: string; onReset?: (
       <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-sm" aria-describedby={undefined}>
         <DialogTitle>{t('userMenu')}</DialogTitle>
         <section aria-label={t('environment')}>
-          <SelectDropdown
+          {practice ? <p>{t('practiceHint')}</p> : <SelectDropdown
             label={t('environment')}
             description={t(`environmentHint.${environmentHint}`)}
             value={preferredEnvironment}
@@ -120,7 +121,7 @@ export function Navbar({ title, onReset, onDemo }: { title?: string; onReset?: (
               { value: 'local', label: t('local') },
               { value: 'api', label: t('api'), disabled: availability !== 'available' },
             ]}
-          />
+          />}
         </section>
         <Separator />
         <section aria-labelledby={menuId + '-actions'} className="grid gap-3">

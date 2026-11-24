@@ -1,5 +1,6 @@
 'use client'
 
+
 import { RelativeDate } from '@/shared/ui/relative-date'
 import { clearWorkbenchPreferences, readStorageValue, storageKey, subscribeToStorage, writeStorageValue } from '@/shared/storage/local-storage'
 import { usePreferenceRecord } from '@/shared/storage/local-storage/preferences/use-preference-record'
@@ -10,7 +11,7 @@ import type { DateRange } from 'react-day-picker'
 import { useFormatter, useTranslations } from 'next-intl'
 import { QuickTour } from '@/shared/ui/quick-tour'
 import { toast } from '@/shared/ui/toast'
-import { ArrowDown, ArrowLeft, ArrowUp, ArrowUpDown, ChevronRight, Compass, Map, Play, Search } from 'lucide-react'
+import { ArrowLeft, ChevronRight, Compass, Map, Play, Search } from 'lucide-react'
 import { TextField } from '@/shared/ui/text-field'
 import { useRenewalRange } from '@/shared/renewals/hooks/useRenewalRange'
 import { DateRangePicker } from '@/shared/ui/date-range-picker'
@@ -28,20 +29,22 @@ import {
 import { DemoResult } from './components/DemoResult'
 import { DemoPlayback } from './components/DemoPlayback'
 import { Navbar } from '../../layout/WorkbenchNavigation'
-import { accounts, currency, type Account } from '@/shared/renewals/accounts'
+import { signalValues, accounts, currency, type Account } from '@/shared/renewals/accounts'
 import { Skeleton } from '@/shared/ui/skeleton'
 import { useDashboardLoading } from './useDashboardLoading'
 import { QueueSkeleton } from './components/DashboardSkeleton'
 import { RenewalOverview } from './components/RenewalOverview'
 
+import { AccountQueue, columns } from './components/AccountQueue'
 import { AccountDecision } from './components/AccountDecision'
 import { useEnvironment, useHoldEnvironment } from '@/shared/api/environment'
 import { useSharedRenewalWork } from '@/shared/renewals/hooks/useSharedRenewalWork'
-import { useRenewalWork } from '@/shared/renewals/hooks/useRenewalWork'
+import { useRenewalWork, type RenewalWork } from '@/shared/renewals/hooks/useRenewalWork'
 import {
   attention,
   attentionPriority,
   committed,
+  capacity,
   evidenceKey,
   renewalDate,
   renewalWindowDays,
@@ -50,14 +53,6 @@ import {
   suggestedAction,
 } from '@/shared/renewals/workflow'
 
-const columns = ['name', 'status', 'evidence', 'renewal', 'adoption', 'value'] as const
-const statusStyles = {
-  review: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-white',
-  investigate: 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200',
-  monitor: 'bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-200',
-  reviewed: 'bg-green-700 text-white',
-  steady: 'bg-muted text-muted-foreground',
-}
 const statuses = ['review', 'investigate', 'monitor', 'reviewed', 'steady'] as const
 type QueueFilters = { query: string; filter: (typeof statuses)[number][] }
 const emptyFilters: QueueFilters = { query: '', filter: [] }
@@ -71,7 +66,7 @@ function followUpFor(days: number) {
 }
 
 export function Dashboard() {
-  const { environment, select } = useEnvironment()
+  const { environment, setPractice } = useEnvironment()
   const t = useTranslations('demo')
   const welcome = useTranslations('welcome')
   const tourProgress = useSyncExternalStore(
@@ -82,7 +77,7 @@ export function Dashboard() {
   const [choosing, setChoosing] = useState(false)
   const [mode, setMode] = useState<DemoMode>()
   function startDemo(choice: DemoMode) {
-    select('local')
+    setPractice(true)
     setMode(choice)
     setChoosing(false)
   }
@@ -100,7 +95,7 @@ export function Dashboard() {
   return (
     <>
       {mode && environment === 'local' ? (
-        <LocalDashboard key={mode} mode={mode} onExit={() => setMode(undefined)} {...controls} />
+        <LocalDashboard key={mode} mode={mode} onExit={() => { setPractice(false); setMode(undefined) }} {...controls} />
       ) : environment === 'api' ? (
         <SharedDashboard {...controls} />
       ) : (
@@ -159,7 +154,7 @@ function LocalDashboard(props: DemoControls) {
 }
 
 function DashboardView({ work, shared, mode, choosingDemo, onDemo, onExit }: DemoControls & {
-  work: ReturnType<typeof useRenewalWork>; shared: boolean
+  work: RenewalWork; shared: boolean
 }) {
   const demo = Boolean(mode)
   const referenceDay = today()
@@ -208,7 +203,7 @@ function DashboardView({ work, shared, mode, choosingDemo, onDemo, onExit }: Dem
       case 'name': difference = a.name.localeCompare(b.name); break
       case 'status': difference = attentionPriority(a, changes) - attentionPriority(b, changes); break
       case 'evidence':
-        difference = t('signals.' + evidenceKey(a, changes[a.id])).localeCompare(t('signals.' + evidenceKey(b, changes[b.id])))
+        difference = t('signals.' + evidenceKey(a, changes[a.id]), signalValues(a)).localeCompare(t('signals.' + evidenceKey(b, changes[b.id]), signalValues(b)))
         break
       case 'renewal': difference = a.days - b.days; break
       case 'value': difference = a.value - b.value; break
@@ -243,94 +238,6 @@ function DashboardView({ work, shared, mode, choosingDemo, onDemo, onExit }: Dem
     })
   }
   const [modalFilters, setModalFilters] = useState(emptyFilters)
-
-  function renderQueue(rows: Account[], inDialog = false) {
-    return (
-      <div className="overflow-x-auto">
-        <table
-          ref={inDialog ? undefined : table}
-          aria-label={t('queue')}
-          className="w-full text-left text-sm"
-        >
-          <thead className="border-b text-muted-foreground">
-            <tr>
-              {columns.map(column => {
-                const active = sort.column === column
-                const Icon = !active ? ArrowUpDown : sort.direction === 'ascending' ? ArrowUp : ArrowDown
-                return (
-                  <th key={column} scope="col" aria-sort={active ? sort.direction : undefined}
-                    className="p-2 font-medium last:text-right">
-                    <button type="button"
-                      className="inline-flex items-center gap-1 rounded-sm hover:text-foreground"
-                      onClick={() => update({
-                        column,
-                        direction: active && sort.direction === 'ascending' ? 'descending' : 'ascending',
-                      })}>
-                      {t(column)}
-                      <Icon aria-hidden="true" className="size-3.5 shrink-0" />
-                    </button>
-                  </th>
-                )
-              })}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(a => {
-              const status = attention(a, changes[a.id])
-              const badge = `mb-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[status]}`
-              const openAccount = (button: HTMLButtonElement) => inDialog ? setAccount(a) : inspect(a, button)
-              return (
-              <tr
-                className="border-b last:border-0 hover:bg-muted/50"
-                key={a.id}
-              >
-                <td className="p-2">
-                  <button
-                    data-account={a.id}
-                    className="rounded-sm py-1 font-medium hover:underline"
-                    onClick={e => openAccount(e.currentTarget)}
-                  >
-                    {a.name}
-                  </button>
-                </td>
-                <td className="min-w-36 p-2">
-                  {status === 'review' ? (
-                    <button type="button" className={badge + ' hover:underline focus-visible:outline-ring'}
-                      aria-label={t('reviewAccount', { name: a.name })} onClick={e => openAccount(e.currentTarget)}>
-                      {t('states.review')}
-                    </button>
-                  ) : <span className={badge}>{t('states.' + status)}</span>}
-                </td>
-                <td className="min-w-40 p-2">
-                  <p className="text-xs text-muted-foreground">
-                    {t('signals.' + evidenceKey(a, changes[a.id]))}
-                  </p>
-                  {changes[a.id]?.plan?.status === 'active' && (
-                    <small>
-                      {t('agreedPlan')} · {changes[a.id].plan?.owner}
-                    </small>
-                  )}
-                </td>
-                <td className="p-2"><RelativeDate date={renewalDate(a.days, referenceDay)} referenceDay={referenceDay} /></td>
-                <td className="p-2">
-                  {adoption(a)}
-                  {a.adoption === null && a.reportingFailed && (
-                    <p className="text-xs text-muted-foreground">
-                      {t('reportingFailed')}
-                    </p>
-                  )}
-                </td>
-                <td className="p-2 text-right tabular-nums">
-                  {fmt.number(a.value, currency)}
-                </td>
-              </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-    )
-  }
 
   function renderQueueView(members: Account[], inDialog = false) {
     const current = inDialog ? modalFilters : { query, filter }
@@ -382,13 +289,13 @@ function DashboardView({ work, shared, mode, choosingDemo, onDemo, onExit }: Dem
             </>
           )}
           <span className="ml-auto rounded-full bg-muted px-3 py-1 text-xs font-medium">
-            {t('used', { count: allocated.length })}
+            {t('used', { capacity, count: allocated.length })}
           </span>
           {allocated.length === 1 && candidates.length >= 2 && (
             <Button
               size="sm"
               variant="ghost"
-              disabled={!ready || racing}
+              disabled={!ready || racing || candidates.slice(0, 2).some(a => work.waitingFor(a.id))}
               onClick={() => void runRace(candidates)}
             >
               {t('race', {
@@ -399,7 +306,8 @@ function DashboardView({ work, shared, mode, choosingDemo, onDemo, onExit }: Dem
           )}
         </div>
         <p className="text-xs text-muted-foreground">{t('order')}</p>
-        {renderQueue(visible, inDialog)}
+        <AccountQueue rows={visible} tableRef={inDialog ? undefined : table} sort={sort} onSort={update}
+          changes={changes} onInspect={inDialog ? setAccount : inspect} adoption={adoption} referenceDay={referenceDay} />
         {visible.length === 0 && (
           <div className="space-y-2 py-4 text-center">
             <p>{t('empty')}</p>
@@ -478,7 +386,6 @@ function DashboardView({ work, shared, mode, choosingDemo, onDemo, onExit }: Dem
             {loading.complete ? (
               <>
                 {!choosingDemo && (!demo || quickTourOpen) && <QuickTour
-                  autoStart
                   invitationKey={demo ? undefined : preferenceKeys.dashboardTour}
                   onClose={demo ? () => setQuickTourOpen(false) : undefined}
                   steps={[
@@ -635,7 +542,8 @@ function DashboardView({ work, shared, mode, choosingDemo, onDemo, onExit }: Dem
                     account={account}
                     work={changes[account.id]}
                     save={save}
-                    ready={ready}
+                    ready={ready && !work.waitingFor(account.id)}
+                    syncing={work.waitingFor(account.id)}
                     readError={readError}
                     retry={retryDashboard}
                     used={allocated.length}
@@ -649,7 +557,7 @@ function DashboardView({ work, shared, mode, choosingDemo, onDemo, onExit }: Dem
                           t('signal'),
                           t(
                             'signals.' +
-                              evidenceKey(account, changes[account.id]),
+                              evidenceKey(account, changes[account.id]), signalValues(account),
                           ),
                         ],
                       ] as const).map(([name, value]) => (

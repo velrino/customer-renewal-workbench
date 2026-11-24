@@ -55,7 +55,7 @@ The API writes to `workbenches/shared`. A confirmed reset clears saved changes f
 | Account commands | 30 | 120 |
 | Reset attempts | 3 | 12 |
 
-Each group has independent in-memory token buckets that start full. Each request consumes a token from both buckets. A throttled caller receives HTTP 429 and a `Retry-After` delay in seconds. Peers behind the same proxy can share a bucket. Restarting an instance refills its quotas. The reset cooldown persists across instances.
+Each group has independent in-memory token buckets that start full. Each request consumes a token from both buckets. A throttled caller receives HTTP 429 and a `Retry-After` delay in seconds. By default the socket peer identifies the caller. Set `TRUSTED_PROXY_HOPS` only after verifying how many forwarding entries the ingress appends on every supported path. The API selects that entry from the right, groups IPv6 addresses by /64, and falls back to the socket peer for incomplete or malformed headers. A direct-access deployment should leave the value at zero. Restarting an instance refills its quotas. The reset cooldown persists across instances.
 
 The health check has its own cache. On Cloud Run it reads database metadata. With the emulator it reads the shared document and accepts an empty database.
 
@@ -84,3 +84,11 @@ go build ./...
 ```
 
 [Frontend guide](../../frontend/web/README.md) · [Project README](../../README.md)
+
+### Demo deployment settings
+
+Set `GOOGLE_CLOUD_PROJECT` to the Firestore project. Set `WORKBENCH_ORIGINS` to comma-separated, exact dashboard and Scalar origins. The local default includes localhost and 127.0.0.1 on ports 3000 and 8080. For remote Vercel previews, explicitly add the intended origin before sharing it. Commands, reset and preflight check browser origins before consuming a quota or writing. Clients without an Origin header can still use the public API.
+
+Health, Scalar and the spec each have an independent read policy of 120 requests/minute per peer and 480 per instance. On master, the deployment workflow sets the service and revision maxima to two instances. Configure a project billing alert for Firestore as described in the [cost guide](../../docs/COST/README.md#controls-for-the-public-demo). Document the measured ingress topology before configuring trusted hops, and confirm the chosen identity distinguishes two networks using normal read traffic.
+
+Commands merge the updated account’s fields in a transaction. Reset replaces the account map, retaining the version watermark, cooldown and unrelated top-level fields. An invalid watermark or cooldown requires operator repair.

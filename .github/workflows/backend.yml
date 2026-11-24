@@ -20,9 +20,23 @@ jobs:
       - name: Verify Go API
         working-directory: backend/api
         run: |
+          go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
           go vet ./...
           go test -race ./...
           go build -o "$RUNNER_TEMP/renewal-api" ./cmd/api
+      - name: Verify Firestore transactions
+        working-directory: backend/api
+        env:
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8765
+        run: |
+          jar="$RUNNER_TEMP/firestore-emulator.jar"
+          curl -fsSL --retry 3 https://storage.googleapis.com/firebase-preview-drop/emulator/cloud-firestore-emulator-v1.22.0.jar -o "$jar"
+          echo "9b6498b7f62714d67f48f59b3818883cd682dbcd46b9f59511de81c97bb5166c  $jar" | sha256sum -c -
+          "$JAVA_HOME_21_X64/bin/java" -jar "$jar" --host 127.0.0.1 --port 8765 > "$RUNNER_TEMP/emulator.log" 2>&1 &
+          emulator=$!
+          trap 'kill "$emulator" || true' EXIT
+          curl -fsS --retry-connrefused --retry 12 --retry-delay 1 "http://$FIRESTORE_EMULATOR_HOST/"
+          go test -race -count=1 -run TestFirestoreTransactions ./internal/modules/renewals
       - name: Verify build inputs
         working-directory: backend/api
         run: |
@@ -62,6 +76,8 @@ jobs:
       PROJECT: customer-renewal-workbench
       REGION: us-central1
       IMAGE: us-central1-docker.pkg.dev/customer-renewal-workbench/cloud-run-source-deploy/renewal-api
+      WORKBENCH_ORIGINS: ${{ vars.WORKBENCH_ORIGINS || 'https://customer-renewal-workbench.vercel.app,https://renewal-api-809086370856.us-central1.run.app' }}
+      VERIFIED_PROXY_HOPS: ${{ vars.TRUSTED_PROXY_HOPS }}
       API_URL: https://renewal-api-809086370856.us-central1.run.app
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -78,8 +94,14 @@ jobs:
           gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
           docker push "$IMAGE:$GITHUB_SHA"
           digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE:$GITHUB_SHA")
+          settings="^|^SENTRY_RELEASE=$GITHUB_SHA|WORKBENCH_ORIGINS=$WORKBENCH_ORIGINS"
+          if [[ -n "$VERIFIED_PROXY_HOPS" ]]; then
+            [[ "$VERIFIED_PROXY_HOPS" =~ ^[0-9]+$ ]]
+            settings+="|TRUSTED_PROXY_HOPS=$VERIFIED_PROXY_HOPS"
+          fi
           gcloud run services update renewal-api --project="$PROJECT" --region="$REGION" \
-            --image="$digest" --update-env-vars="SENTRY_RELEASE=$GITHUB_SHA" --quiet
+            --max=2 --max-instances=2 --image="$digest" \
+            --update-env-vars="$settings" --quiet
       - name: Verify the public contract and Firestore read
         run: |
           curl --fail --silent --show-error --retry 4 "$API_URL/openapi.json" -o "$RUNNER_TEMP/openapi.json"

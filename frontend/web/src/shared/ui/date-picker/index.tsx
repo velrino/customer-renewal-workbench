@@ -4,6 +4,7 @@ import { useState } from 'react'
 import * as Popover from '@radix-ui/react-popover'
 import { CalendarDays } from 'lucide-react'
 import { useFormatter, useTranslations } from 'next-intl'
+import { today } from '@/shared/renewals/workflow'
 import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/style.css'
 import { Button } from '../button'
@@ -40,7 +41,7 @@ export function DatePicker({ label, selected, onSelect, defaultMonth, min, max, 
       <Popover.Portal>
         <Popover.Content align="start" sideOffset={4} collisionPadding={8} aria-label={label}
           className="z-50 max-h-[var(--radix-popover-content-available-height)] overflow-auto rounded-lg border bg-popover p-3 text-popover-foreground shadow-md">
-          <DayPicker mode="single" timeZone="UTC" autoFocus selected={selected}
+          <DayPicker mode="single" timeZone="UTC" today={new Date(today())} autoFocus selected={selected}
             disabled={[...(min ? [{ before: min }] : []), ...(max ? [{ after: max }] : [])]}
             defaultMonth={selected ?? defaultMonth ?? min} onSelect={choose}
             className="[--rdp-accent-color:var(--primary)]! [--rdp-day-width:2.25rem]! [--rdp-day-height:2.25rem]! [--rdp-day_button-width:2.25rem]! [--rdp-day_button-height:2.25rem]!" />

@@ -7,12 +7,8 @@
 </head>
 <body>
   <div id="app"></div>
-  <script type="module">
-    import { createApiReference } from 'https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.83.0/esm.js'
-    createApiReference('#app', {
-      url: '/openapi.json',
-      showDeveloperTools: 'never',
-    })
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.83.0/dist/browser/standalone.js"
+    integrity="sha384-Z2Wz4L/5mCSEGTCpHPw3JIN6+eRxpIwq2sE2QfGtP+hmmwcgJKNVK9zBbfnbjlKN" crossorigin="anonymous"></script>
+  <script>Scalar.createApiReference('#app', { url: '/openapi.json', showDeveloperTools: 'never', withDefaultFonts: false })</script>
 </body>
 </html>

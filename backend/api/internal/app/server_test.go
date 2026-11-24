@@ -35,7 +35,7 @@ func TestHealth(t *testing.T) {
 					}
 					<-release
 					return 10 * time.Millisecond, tc.err
-				})
+				}, 0)
 				for range 4 {
 					go func() {
 						w := httptest.NewRecorder()
@@ -91,7 +91,7 @@ func TestHealth(t *testing.T) {
 }
 
 func TestDocsAndRoutes(t *testing.T) {
-	h := Routes("test", nil)
+	h := Routes("test", nil, 0)
 	for _, tc := range []struct {
 		method, path string
 		code         int

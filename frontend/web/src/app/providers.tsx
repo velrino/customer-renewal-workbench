@@ -1,6 +1,6 @@
 'use client'
 
-import '@/shared/telemetry/observability'
+import { initializeObservability } from '@/shared/telemetry/observability'
 import { useEffect } from 'react'
 import { initializeAnalytics } from '@/shared/telemetry/analytics'
 import { preferenceKeys } from '@/shared/storage/local-storage/preferences'
@@ -12,7 +12,7 @@ import { routing } from '@/shared/i18n/routing'
 import messages from '@/shared/i18n/messages/en.json'
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  useEffect(() => { void initializeAnalytics() }, [])
+  useEffect(() => { void initializeAnalytics(); void initializeObservability() }, [])
 
   return (
     <NextIntlClientProvider
