@@ -13,15 +13,19 @@ import (
 	"renewal-api/internal/shared/ratelimit"
 )
 
+type readBoard func(context.Context) (Board, error)
+
 type updateBoard func(context.Context, func(*Board) error) error
 
-func Register(mux *http.ServeMux, update updateBoard) {
+func Register(mux *http.ServeMux, read readBoard, update updateBoard) {
 	commands := "/workbench/accounts/{account}/commands"
 	reset := "/workbench/reset"
+	listQuota := ratelimit.PerMinute{PerPeer: 60, PerInstance: 240}
 	commandQuota := ratelimit.PerMinute{PerPeer: 30, PerInstance: 120}
 	resetQuota := ratelimit.PerMinute{PerPeer: 3, PerInstance: 12}
-	mux.Handle("POST "+commands, publicWrite(commandQuota.Wrap(writeHandler(update, false))))
-	mux.Handle("POST "+reset, publicWrite(resetQuota.Wrap(writeHandler(update, true))))
+	mux.Handle("GET /workbench/accounts", publicResponse(listQuota.Wrap(listHandler(read))))
+	mux.Handle("POST "+commands, publicResponse(commandQuota.Wrap(writeHandler(update, false))))
+	mux.Handle("POST "+reset, publicResponse(resetQuota.Wrap(writeHandler(update, true))))
 	for _, path := range []string{commands, reset} {
 		mux.HandleFunc("OPTIONS "+path, func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -32,7 +36,7 @@ func Register(mux *http.ServeMux, update updateBoard) {
 	}
 }
 
-func publicWrite(next http.Handler) http.HandlerFunc {
+func publicResponse(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Cache-Control", "no-store")
@@ -74,7 +78,7 @@ func writeHandler(update updateBoard, reset bool) http.HandlerFunc {
 			}
 			now := time.Now().In(loc)
 			id := r.PathValue("account")
-			if _, ok := renewalDays[id]; !ok {
+			if _, ok := daysUntilRenewal(id); !ok {
 				respondError(w, failure{404, "unknownAccount"})
 				return
 			}

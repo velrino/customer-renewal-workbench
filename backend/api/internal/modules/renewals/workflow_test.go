@@ -35,7 +35,8 @@ func TestSharedPortfolio(t *testing.T) {
 	if err := board.reset(now); err != nil {
 		t.Fatal(err)
 	}
-	for id := range renewalDays {
+	for _, account := range portfolio {
+		id := account.id
 		a := board.Changes[id]
 		if a != (Account{ID: id, Revision: board.Version}) {
 			t.Fatalf("unexpected reset state for %s: %+v", id, a)
