@@ -9,8 +9,13 @@
 - [Project plan](docs/PLANS/0-START/plan.excalidraw)
 - [Plan preview · Delivered and At scale](docs/PLANS/0-START/plan.svg)
 
+## Notes or demo credentials
+
+No account or credentials are required. On your first visit, choose **Watch a demo** for a Quick Tour followed by a walkthrough of one customer’s renewal, or **Take the Quick Tour** to learn where to find upcoming renewals and decide who needs a follow-up.
+
 ## Table of contents
 
+- [Notes or demo credentials](#notes-or-demo-credentials)
 - [Architecture](#architecture)
   - [Local and shared writes](#local-and-shared-writes)
 - [Run locally](#run-locally)
@@ -27,13 +32,13 @@
   - [Browser and shared data](#browser-and-shared-data)
   - [Delivery and operations](#delivery-and-operations)
 - [Monthly costs](#monthly-costs)
-- [Verification and attribution](#verification-and-attribution)
+- [AI tools and verification](#ai-tools-and-verification)
 
 ## Architecture
 
 **IndexedDB powers both Local mode and the fallback when the API is unavailable.** The dashboard opens the browser’s local portfolio while it checks the API in the background. Reviewers can inspect accounts, save plans and record questions locally, and their work survives a refresh in the same browser profile.
 
-When the API recovers, a reviewer who previously selected **Shared API** returns to the shared portfolio after a successful health check and once any open editor or reset dialog is closed. Firestore supplies the latest shared state, and new shared edits go through the API. Work saved during fallback stays in IndexedDB and is available again under **User menu → Environment → Local**.
+When the API recovers, a reviewer who previously selected **Shared API** returns to the shared portfolio once the health check succeeds, the browser receives a fresh Firestore snapshot, and any open Local editor or reset dialog is closed. If the shared board cannot be read, the dashboard uses Local while the browser retries in the background. Firestore supplies the latest shared state, and new shared edits go through the API. Work saved during fallback stays in IndexedDB and is available again under **User menu → Environment → Local**.
 
 [![Runtime architecture with the browser, Go API, Firestore and telemetry](docs/ARCHITECTURE/architecture.svg)](docs/ARCHITECTURE/architecture.svg)
 
@@ -206,8 +211,8 @@ The table projects monthly spend for a hypothetical shared workload at each revi
 | **Total · with Pages or Hobby**  |  $0.00 |  $0.00 |  $0.00 |  $2.88 |  $92.25 |
 | **Total · with Vercel Pro**      | $20.00 | $20.00 | $20.00 | $22.88 | $112.25 |
 
-## Verification and attribution
+## AI tools and verification
 
-- The author personally checked the frontend and directed the dashboard layout, dialogs, theme options, and frontend-first approach.
-- Codex ran type checking, tests, and the static build. Chrome checks covered the account workflow, reloads, competing saves for the last slot, browser-profile isolation, and storage failure recovery. Safari, Firefox, physical devices, and screen readers remain unverified.
-- AI assistance covered design alternatives, the architecture diagram, implementation, documentation, and scripted verification. [Reviewer instructions](AGENTS.md)
+We used Fable 5.2 to draft the plan, GPT 6.2 Astra to review it, and GPT 6.2 Sol to implement it. Opus 5.2 and GPT 6.2 Astra reviewed the code from different perspectives, looking for duplicated logic, potential vulnerabilities, and ways to simplify the implementation.
+
+The author checked the frontend. Codex ran type checks, tests, and the static build, and verified renewal workflows in Chrome, including what happens when two reviewers try to claim the last available slot.
