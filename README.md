@@ -89,6 +89,12 @@ AI assistance covered interface alternatives, the architecture diagram, implemen
 
 [Public prototype](https://customer-renewal-workbench.vercel.app/) · [Local dashboard](http://127.0.0.1:3000/) · [Public repository](https://github.com/velrino/customer-renewal-workbench)
 
+## Frontend telemetry
+
+PostHog counts dashboard visits with its native `$pageview` event. An unexpected browser error also emits `crw-error` with its source. The browser sends no account identifiers, form fields, exception text, or query strings to PostHog. Configure `NEXT_PUBLIC_POSTHOG_ENABLED=true`, `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`, and `NEXT_PUBLIC_POSTHOG_HOST` at build time. Collection is disabled on localhost and respects Do Not Track.
+
+Sentry groups unexpected browser exceptions for engineering investigation. Set `NEXT_PUBLIC_SENTRY_DSN` to enable reporting. Vercel supplies the release commit and environment at build time. Session replay is disabled in both clients. For production source maps, supply a build-only `SENTRY_AUTH_TOKEN` with release upload access and rebuild.
+
 ## Reviewing with an AI assistant
 
 Open [AGENTS.md](AGENTS.md) for project instructions and links to the review skills. Any reviewer can follow them as plain Markdown.
